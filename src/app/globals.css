@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+:root {
+    /* Base theme colors */
+    --background: #ffffff;
+    --foreground: #252525;
+
+    /* Font */
+    --font-sans: var(--font-inter);
+
+    /* Brand palette */
+    --BRAND_LEAF: #E7CBA8;
+    --BRAND_LEAF_DIM: #CDBA94;
+    --BRAND_ROBOT: #B9480B;
+
+    --TEXT_PRIMARY: #0D0501;
+
+    /* Zone backgrounds */
+    --BG_NAVBAR: #252525;
+    --BG_FOOTER: #736D6D;
+
+    /* Zone logic: navbar and footer */
+    --NAVBAR_PRIMARY: var(--BG_NAVBAR); /* #252525 */
+    --NAVBAR_SECONDARY: #8F8F8F; /* much lighter for contrast */
+
+    --FOOTER_PRIMARY: var(--BG_FOOTER); /* #736D6D */
+    --FOOTER_SECONDARY: #1A1A1A; /* darker than navbar */
+
+    /* Optional semantic tokens */
+    --color-accent: var(--BRAND_ROBOT);
+    --color-muted: var(--BRAND_LEAF);
+    --color-text: var(--TEXT_PRIMARY);
+    --color-nav: var(--NAVBAR_PRIMARY);
+    --color-footer: var(--FOOTER_PRIMARY);
+}
+
+
+html,
+body {
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    overscroll-behavior: none;
+}
+
+
+body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-inter), var(--font-sans), sans-serif;
+}
+
+@layer components {
+    .text-page {
+
+        @apply
+        pt-24
+        px-8
+
+        md:px-16
+        xl:px-24
+        2xl:px-32
+
+        text-[var(--TEXT_PRIMARY)]
+        ;
+    }
+}
