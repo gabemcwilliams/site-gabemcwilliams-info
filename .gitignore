@@ -240,3 +240,5 @@ pkg/
 *.gz
 *.rar
 *.7z
+
+gitleaks-report.json
