@@ -8,8 +8,10 @@ export default function ComingSoonPage() {
                 Want to see more?
             </h1>
 
-            <p className="text-xl mb-24">
+            <p className="text-xl mb-22">
                 Here’s what I’m working on now, and where it’s headed next.
+
+
             </p>
 
             <h2 className="text-2xl font-semibold mb-6">Current project</h2>
@@ -38,7 +40,7 @@ export default function ComingSoonPage() {
                         mb-18
                       "
             >
-                <p className="mb-6">
+                <p className="mb-2">
                     Looking for{" "}
                     <Link
                         href="/story"
@@ -59,6 +61,15 @@ export default function ComingSoonPage() {
                 </p>
             </blockquote>
 
+            <p className="text-md mb-1 italic">
+                Don’t hesitate to try the spotlight game again.
+                The cacti and ground cover have a mind of their own, and the moon shifts mood and sometimes position.
+
+
+            </p>
+            <p className="text-md italic">
+                How fast can you find it again? Try a different order, or simply enjoy the desert calm.
+            </p>
 
         </section>
     );
