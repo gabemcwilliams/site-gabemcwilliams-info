@@ -3,28 +3,28 @@
 :root {
     /* Base theme colors */
     --background: #ffffff;
-    --foreground: #252525;
+    --foreground: #201e1f;
 
     /* Font */
     --font-sans: var(--font-inter);
 
     /* Brand palette */
-    --BRAND_LEAF: #E7CBA8;
-    --BRAND_LEAF_DIM: #CDBA94;
+    --BRAND_LEAF: #8AA5C2;
+    --BRAND_LEAF_DIM: #bfd7ea;
     --BRAND_ROBOT: #B9480B;
 
     --TEXT_PRIMARY: #0D0501;
 
     /* Zone backgrounds */
-    --BG_NAVBAR: #252525;
-    --BG_FOOTER: #736D6D;
+    --BG_NAVBAR: #201e1f;
+    --BG_FOOTER: #E67F47;
 
     /* Zone logic: navbar and footer */
-    --NAVBAR_PRIMARY: var(--BG_NAVBAR); /* #252525 */
-    --NAVBAR_SECONDARY: #8F8F8F; /* much lighter for contrast */
+    --NAVBAR_PRIMARY: var(--BG_NAVBAR); /* #201e1f */
+    --NAVBAR_SECONDARY: #201e1f; /* much lighter for contrast */
 
     --FOOTER_PRIMARY: var(--BG_FOOTER); /* #736D6D */
-    --FOOTER_SECONDARY: #1A1A1A; /* darker than navbar */
+    --FOOTER_SECONDARY: #B8470B; /* darker than navbar */
 
     /* Optional semantic tokens */
     --color-accent: var(--BRAND_ROBOT);

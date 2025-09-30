@@ -97,7 +97,7 @@ export default function PremierLogoOverlayPortal() {
             .attr('y', cy - 72)
             .attr('width', 1024)
             .attr('height', 164)
-            .attr('fill', '#252525')
+            .attr('fill', '#201e1f')
             .attr('opacity', 1)
 
 

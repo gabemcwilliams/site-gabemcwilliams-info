@@ -22,7 +22,7 @@ export default function FullscreenFadeCover(
         visibleTimer = 0, // Seconds
         fadeTimer = 1,    // Seconds
         zIndex = 1500,
-        color = '#252525',
+        color = '#201e1f',
         keepMounted = false,
     }: Props) {
     const [mounted, setMounted] = useState(false);
