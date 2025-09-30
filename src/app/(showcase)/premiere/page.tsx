@@ -1,14 +1,10 @@
-// no "use client" here
+// app/(showcase)/premiere/page.tsx
 import SSRPreRenderMask from '@/components/showcase/premiere/spotlight/overlay/SSRPreRenderMask';
 import PremiereClient from './PremiereClient';
 
-type PageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
-};
-
-export default function Page({ searchParams }: PageProps) {
-  const pick = (v: string | string[] | undefined) => Array.isArray(v) ? v[0] : v;
-  const num = (v: string | string[] | undefined, fallback: number) => {
+export default function Page({ searchParams }: any) {
+  const pick = (v: any) => Array.isArray(v) ? v[0] : v;
+  const num  = (v: any, fallback: number) => {
     const n = Number(pick(v));
     return Number.isFinite(n) ? n : fallback;
   };
@@ -19,9 +15,7 @@ export default function Page({ searchParams }: PageProps) {
 
   return (
     <>
-      {/* SSR placeholder on first paint (zIndex inside component > overlay wrapper) */}
       <SSRPreRenderMask cx={cx} cy={cy} r={r} />
-      {/* Your client shell (the old page code moved here) */}
       <PremiereClient />
     </>
   );
