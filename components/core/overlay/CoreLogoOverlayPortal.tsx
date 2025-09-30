@@ -11,7 +11,7 @@ type Props = {
     logoTop?: string | number;   // e.g. '6rem'
     logoLeft?: string | number;  // e.g. '8rem'
     /** Dark overlay fill used by the mask */
-    overlayColor?: string;       // e.g. '#252525'
+    overlayColor?: string;       // e.g. '#201e1f'
     /** Extra distance outside the spotlight before showing the logo */
     revealMarginPx?: number;     // e.g. 150
     /** z-index for the overlay + logo wrapper */
@@ -23,7 +23,7 @@ export default function CoreLogoOverlayPortal(
         logoSrc = '/assets/logos/base_tree_favicon_transparent_bg.svg',
         logoTop = '6rem',
         logoLeft = '8rem',
-        overlayColor = '#252525',
+        overlayColor = '#201e1f',
         revealMarginPx = 150,
         zIndex = 2147483646,
     }: Props) {

@@ -17,11 +17,11 @@ export default function NavBar() {
     const [hoverEnabled, setHoverEnabled] = useState(false);
 
     const logoMap = {
-        default: '/assets/core/navbar/gabe_mcwilliams_logo_text_right_base.svg',
-        wilted: '/assets/core/navbar/gabe_mcwilliams_logo_text_right_withered.svg',
-        wateringRobot: '/assets/core/navbar/gabe_mcwilliams_logo_text_right_watered.svg',
+        default: '/assets/core/navbar/gabe_mcwilliams_logo_text_right_growing.svg',
+        wilted: '/assets/core/navbar/gabe_mcwilliams_logo_text_right_growing.svg',
+        wateringRobot: '/assets/core/navbar/gabe_mcwilliams_logo_text_right_growing.svg',
         growing: '/assets/core/navbar/gabe_mcwilliams_logo_text_right_growing.svg',
-        healthyPlant: '/assets/core/navbar/gabe_mcwilliams_logo_text_right_healthy.svg',
+        healthyPlant: '/assets/core/navbar/gabe_mcwilliams_logo_text_right_growing.svg',
     };
 
     useEffect(() => {

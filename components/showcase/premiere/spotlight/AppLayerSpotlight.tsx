@@ -216,7 +216,7 @@ function Spotlight(
         svg.append('rect')
             .attr('width', width)
             .attr('height', height)
-            .attr('fill', '#252525')
+            .attr('fill', '#201e1f')
             .attr('fill-opacity', overlayVisible)
             .attr('mask', 'url(#spotlight-mask)')
             .attr('pointer-events', 'none');
@@ -648,7 +648,7 @@ function Spotlight(
                         style={{
                             position: 'fixed',
                             inset: 0,
-                            backgroundColor: '#252525',
+                            backgroundColor: '#201e1f',
                             zIndex: 1,
                         }}
                     />

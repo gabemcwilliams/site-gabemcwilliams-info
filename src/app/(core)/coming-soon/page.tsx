@@ -44,7 +44,7 @@ export default function ComingSoonPage() {
                     Looking for{" "}
                     <Link
                         href="/story"
-                        className="text-[var(--BRAND_ROBOT)] hover:text-[#252525] "
+                        className="text-[var(--BRAND_ROBOT)] hover:text-[#201e1f] "
                     >
                         talent
                     </Link>
@@ -54,7 +54,7 @@ export default function ComingSoonPage() {
                     Want to hear more?{" "}
                     <Link
                         href="/contact"
-                        className="text-[var(--BRAND_ROBOT)] hover:text-[#252525] "
+                        className="text-[var(--BRAND_ROBOT)] hover:text-[#201e1f] "
                     >
                         Let’s talk!
                     </Link>

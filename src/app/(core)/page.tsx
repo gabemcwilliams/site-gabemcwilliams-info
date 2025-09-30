@@ -31,7 +31,7 @@ export default function Home() {
     const cxFallback = 1546.2;
     const cyFallback = 1114.928 - 211.578125;
     const rFinal = FINAL_RADIUS;
-    const maskColor = '#252525';
+    const maskColor = '#201e1f';
 
     const [ballPosition, setBallPosition] = useState<{ x: number; y: number } | null>(null);
 
@@ -264,7 +264,7 @@ export default function Home() {
                                                 .attr('cx', x)
                                                 .attr('cy', y)
                                                 .attr('r', finalRadius)
-                                                .style('fill', '#252525')
+                                                .style('fill', '#201e1f')
                                                 .style('opacity', 0.2)
                                                 .attr('id', 'shadow-under-ball');
 
@@ -490,21 +490,21 @@ export default function Home() {
                 {/* Page SVG for the ball & local visuals */}
                 <svg ref={dotRef} style={{position: 'absolute', top: 0, left: 0, zIndex: 10}}/>
 
-                {ballPosition && (
-                    <img
-                        src="/assets/showcase/premiere/click_me.svg"
-                        alt=""
-                        role="presentation"
-                        style={{
-                            position: 'absolute',
-                            left: `${ballPosition.x - 210}px`,
-                            top: `${ballPosition.y - 10}px`,
-                            width: '100px',
-                            transform: 'translateY(-50%)',
-                            pointerEvents: 'none',
-                        }}
-                    />
-                )}
+                {/*{ballPosition && (*/}
+                {/*    <img*/}
+                {/*        src="/assets/showcase/premiere/click_me.svg"*/}
+                {/*        alt=""*/}
+                {/*        role="presentation"*/}
+                {/*        style={{*/}
+                {/*            position: 'absolute',*/}
+                {/*            left: `${ballPosition.x - 210}px`,*/}
+                {/*            top: `${ballPosition.y - 10}px`,*/}
+                {/*            width: '100px',*/}
+                {/*            transform: 'translateY(-50%)',*/}
+                {/*            pointerEvents: 'none',*/}
+                {/*        }}*/}
+                {/*    />*/}
+                {/*)}*/}
             </main>
         </>
     );
