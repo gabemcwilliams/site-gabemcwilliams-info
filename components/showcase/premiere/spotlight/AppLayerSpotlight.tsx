@@ -1,5 +1,7 @@
 'use client';
 
+import FallbackOverlay from '@/components/showcase/premiere/spotlight/overlay/FallbackOverlay'
+
 import {useMaskLayoutStore} from "@/states/showcase/premiere/useMaskLayoutStore";
 import type {RevealId} from "@/states/showcase/premiere/useMaskLayoutStore";
 
@@ -27,27 +29,14 @@ type AppLayerSpotlightProps = {
     onMaskReady?: () => void;
 };
 
-export default function AppLayerSpotlight(
-    {
-        initialOverlayVisible,
-        onMaskReady,
-    }: AppLayerSpotlightProps) {
-    return (
-        <Suspense
-            fallback={
-                <div
-                    style={{
-                        background: 'linear-gradient(to bottom, #000 1%, #623516 100%)',
-                        width: '100vw',
-                        height: '100vh',
-                    }}
-                />
-            }
-        >
-            <Spotlight initialOverlayVisible={initialOverlayVisible} onMaskReady={onMaskReady}/>
-        </Suspense>
-    );
+export default function AppLayerSpotlight({ initialOverlayVisible, onMaskReady }: AppLayerSpotlightProps) {
+  return (
+    <Suspense fallback={<FallbackOverlay />}>
+      <Spotlight initialOverlayVisible={initialOverlayVisible} onMaskReady={onMaskReady} />
+    </Suspense>
+  );
 }
+
 
 // =========================
 // Derived POI type + extractor
