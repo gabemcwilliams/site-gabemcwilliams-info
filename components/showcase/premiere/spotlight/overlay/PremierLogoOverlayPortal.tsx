@@ -130,9 +130,9 @@ export default function PremierLogoOverlayPortal() {
                     className="select-none focus:outline-none cursor-pointer"
                     src="/assets/logos/base_tree_favicon_transparent_bg.svg"
                     alt="Home"
-                    width={50}
-                    height={50}
-                    style={{width: 50, height: 50}}
+                    width={100}
+                    height={100}
+                    style={{width: 100, height: 100}}
                     priority
                 />
             </Link>

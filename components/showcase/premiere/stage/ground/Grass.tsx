@@ -30,23 +30,23 @@ const grassImages = [
 export const defaultGrassLayers: GrassLayer[] = [
     {
         imgSet: grassImages,
-        opacity: 0.8,
-        heightVh: 2,
+        opacity: 0.4,
+        heightVh: 1.5,
         bottomVh: 55,
         count: 5,
         filter: 'grayscale(45%) brightness(0.45) contrast(1.05)'
     },
     {
         imgSet: grassImages,
-        opacity: 0.6,
-        heightVh: 3,
+        opacity: 0.3,
+        heightVh: 2,
         bottomVh: 45,
         count: 15,
         filter: 'grayscale(45%) brightness(0.55) contrast(1.05)'
     },
     {
         imgSet: grassImages,
-        opacity: 0.85,
+        opacity: 0.3,
         heightVh: 4,
         bottomVh: 35,
         count: 6,

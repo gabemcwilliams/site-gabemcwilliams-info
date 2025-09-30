@@ -185,7 +185,7 @@ export default function CoreLogoOverlayPortal(
             <img
                 src={logoSrc}
                 role="presentation"
-                style={{width: 50, height: 50, userSelect: 'none'}}
+                style={{width: 150, height: 150, userSelect: 'none'}}
                 draggable={false}
                 alt={'Logo Placeholder - Not Interactable'}/>
         </div>,
