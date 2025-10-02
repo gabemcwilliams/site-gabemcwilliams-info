@@ -1,4 +1,4 @@
-export default function FallbackOverlay() {
+export default function SpotlightHydrationMask() {
   // Must match the “overlay ON” state exactly (same ID/z-index/position)
   return (
     <div

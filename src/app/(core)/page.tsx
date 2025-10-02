@@ -1,7 +1,12 @@
 'use client';
 
+import {useRouter} from 'next/navigation';
+
+import {useSpotlightMaskStore} from '@/states/showcase/premiere/useSpotlightMaskStore';
+
 import React, {useEffect, useRef, useState} from 'react';
 import * as d3 from 'd3';
+
 
 export default function Home() {
     // ---------------------------------------------------------
@@ -13,6 +18,9 @@ export default function Home() {
     // ---------------------------------------------------------
     // Refs
     // ---------------------------------------------------------
+
+    const router = useRouter();
+
     const dotRef = useRef<SVGSVGElement | null>(null);           // Page SVG (ball)
     const spanRef = useRef<HTMLSpanElement | null>(null);        // Anchor for initial ball position
     const mainRef = useRef<HTMLElement | null>(null);            // Layout container
@@ -34,6 +42,7 @@ export default function Home() {
     const maskColor = '#201e1f';
 
     const [ballPosition, setBallPosition] = useState<{ x: number; y: number } | null>(null);
+
 
     // ---------------------------------------------------------
     // Main animation effect
@@ -326,7 +335,13 @@ export default function Home() {
                                                         .styleTween('stroke', () => d3.interpolateRgb('#B9480B', '#623516'))
                                                         .style('opacity', 0.8)
                                                         .on('end', () => {
-                                                            window.location.href = `/premiere`;
+                                                            useSpotlightMaskStore.getState().setAll({
+                                                                cx: x,
+                                                                cy: adjustedY,
+                                                                r: finalRadius
+                                                            });
+                                                            useSpotlightMaskStore.getState().setEnabled(true); // if you want spotlight on
+                                                            router.push('/premiere'); // no query params
                                                         });
                                                 });
                                         });

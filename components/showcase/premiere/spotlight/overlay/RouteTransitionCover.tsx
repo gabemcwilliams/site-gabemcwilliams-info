@@ -1,4 +1,4 @@
-// components/FullscreenFadeCover.tsx
+// components/RouteTransitionCover.tsx
 'use client';
 
 import React, {useEffect, useState} from 'react';
@@ -17,7 +17,7 @@ type Props = {
     keepMounted?: boolean;
 };
 
-export default function FullscreenFadeCover(
+export default function RouteTransitionCover(
     {
         visibleTimer = 0, // Seconds
         fadeTimer = 1,    // Seconds

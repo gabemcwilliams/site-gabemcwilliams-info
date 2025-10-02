@@ -3,8 +3,13 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useMaskVisibilityStore } from '@/states/showcase/premiere/useMaskVisibilityStore';
+import { useSpotlightMaskStore } from '@/states/showcase/premiere/useSpotlightMaskStore';
 import AppLayerSpotlight from '@/components/showcase/premiere/spotlight/AppLayerSpotlight';
+
+import { getInitialSpotlightMask, getInitialSpotlightEnabled } from '@/states/showcase/premiere/useSpotlightMaskStore';
+
+const { cx, cy, r } = getInitialSpotlightMask();
+const enabled = getInitialSpotlightEnabled();
 
 // import SSRPreRenderMask from '@/components/showcase/premiere/spotlight/overlay/SSRPreRenderMask';
 // import PremiereClient from './PremiereClient';
@@ -16,7 +21,9 @@ const AppStageSettingLazy = dynamic(
 );
 
 export default function Premiere() {
-  const spotlightOn = useMaskVisibilityStore((s) => s.enabled);
+  const spotlightOn = useSpotlightMaskStore((s) => s.enabled);
+
+
 
   // 1) maskReady flips when the masked rect has actually painted
   const [maskReady, setMaskReady] = useState(false);
@@ -79,9 +86,15 @@ export default function Premiere() {
 
   return (
     <div style={rootStyle}>
-      {/* Spotlight overlay renders first and tells us when it has actually painted */}
       <div style={overlayWrapperStyle}>
-        <AppLayerSpotlight initialOverlayVisible={1} onMaskReady={handleMaskReady} />
+        <AppLayerSpotlight
+          initialOverlayVisible={1}
+          onMaskReady={handleMaskReady}
+          initialCx={cx}
+          initialCy={cy}
+          initialR={r}
+          initiallyEnabled={enabled}
+        />
       </div>
 
       {/* Stage mounts only after the mask is visible; no SSR, no flash */}

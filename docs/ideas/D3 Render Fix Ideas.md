@@ -1,5 +1,3 @@
-Yes — that's a known pain with **SVG layout timing and effects triggering too early**, especially in D3, React, or when the DOM isn't fully painted yet.
-
 Here’s what’s going on — and how to *fix it like a pro*:
 
 ---

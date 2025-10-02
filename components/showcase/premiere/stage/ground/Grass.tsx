@@ -1,8 +1,8 @@
 'use client';
 
 import React, {memo, useMemo, useEffect, useState} from 'react';
-import {depthsFromBottomVh} from '@/components/utils/depths';
-import {useViewportClass} from '@/hooks/useViewportClass';
+import {computeGroundDepth} from '@/components/utils/computeGroundDepth';
+import {useStageGroundSizeClass} from '@/hooks/useStageGroundSizeClass';
 
 export interface GrassProps {
     visible?: boolean;
@@ -181,7 +181,7 @@ function Grass(
 
     useEffect(markMountedEffect, []);
 
-    const vp = useViewportClass();
+    const vp = useStageGroundSizeClass();
 
     // Responsive gutter
     const centerBlockPct =
@@ -213,7 +213,7 @@ function Grass(
                         width: '100%',
                         height: `${layer.heightVh}vh`,
                         opacity: layer.opacity,
-                        zIndex: depthsFromBottomVh(layer.bottomVh ?? 0, 0, 100),
+                        zIndex: computeGroundDepth(layer.bottomVh ?? 0, 0, 100),
                         filter: layer.filter,
                         overflow: 'visible',
                     }}

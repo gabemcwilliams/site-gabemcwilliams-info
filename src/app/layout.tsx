@@ -3,7 +3,7 @@ import type {Metadata} from "next";
 import {Inter} from "next/font/google";
 import "./globals.css";
 
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import {SpeedInsights} from "@vercel/speed-insights/next";
 
 import React from "react";
 
@@ -27,6 +27,12 @@ export default function RootLayout({children}: { children: React.ReactNode }) {
     return (
         // SSR the gate so client & server markup match
         <html lang="en" data-spotlight-armed="0" suppressHydrationWarning>
+        <head>
+            <link rel="preload" as="image" href="/assets/showcase/premiere/clouds/streams/cloud_stream_far.svg"/>
+            <link rel="preload" as="image" href="/assets/showcase/premiere/clouds/streams/cloud_stream_medium.svg"/>
+            <link rel="preload" as="image" href="/assets/showcase/premiere/clouds/streams/cloud_stream_near.svg"/>
+
+        </head>
         <body className={`${inter.variable} antialiased`}>
         <div className="flex flex-col min-h-screen">
 
@@ -34,7 +40,7 @@ export default function RootLayout({children}: { children: React.ReactNode }) {
             <main className="flex-grow">
 
                 {children}
-        <SpeedInsights />
+                <SpeedInsights/>
             </main>
 
         </div>

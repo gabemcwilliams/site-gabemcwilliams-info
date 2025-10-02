@@ -5,14 +5,14 @@ import {usePathname} from 'next/navigation';
 import * as d3 from 'd3';
 import Image from 'next/image';
 import Link from 'next/link';
-import {useMaskVisibilityStore} from '@/states/showcase/premiere/useMaskVisibilityStore';
+import {useSpotlightMaskStore} from '@/states/showcase/premiere/useSpotlightMaskStore';
 
-export default function PremierLogoOverlayPortal() {
+export default function PremiereSpotlightSearchMask() {
 
     const DURATION = 700;
 
     const pathname = usePathname();
-    const spotlightOn = useMaskVisibilityStore(s => s.enabled);
+    const spotlightOn = useSpotlightMaskStore(s => s.enabled);
 
     const logoRef = useRef<HTMLDivElement>(null);
     const rafRef = useRef<number | null>(null);

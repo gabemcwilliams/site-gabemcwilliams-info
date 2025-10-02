@@ -29,7 +29,7 @@ type MaskLayoutState = {
 };
 
 /** Combined store for layout and mouse position */
-export const useMaskLayoutStore = create<MaskLayoutState>((set) => ({
+export const usePOIRevealStore = create<MaskLayoutState>((set) => ({
   items: {
     audience: { id: 'audience', src: '', xVW: 0, yVH: 0, scale: 1, visible: false },
     cat:      { id: 'cat',      src: '', xVW: 0, yVH: 0, scale: 1, visible: true  },

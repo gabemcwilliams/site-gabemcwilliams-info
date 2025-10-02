@@ -1,6 +1,6 @@
 // app/contact/page.jsx
 // import Link from 'next/link';
-import {CalendlyButton, CalendlyInline} from '@/components/core/contact/Calendly';
+import {CalendlyButton, CalendlyInline} from '@/components/core/contact/CalendlyWidget';
 
 
 export default function ContactPage() {

@@ -37,7 +37,7 @@ const DEBUG_FORCE_VISIBLE = false;           // <- flip to false when done
 const LOGO_Z = 2147483647;
 const OVERLAY_Z = 2147483000;
 
-export default function CoreLogoOverlayPortal({
+export default function LandingPageCollapsingMask({
   logoSrc = '/assets/core/navbar/logo_growing.svg',
   logoTop = '6rem',
   logoLeft = '8rem',
