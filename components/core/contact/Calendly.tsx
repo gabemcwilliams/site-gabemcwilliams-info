@@ -21,7 +21,7 @@ export const CalendlyButton = () => {
     const openCalendly = () => {
         if (ready && typeof window !== 'undefined' && (window as any).Calendly) {
             (window as any).Calendly.initPopupWidget({
-                url: 'https://calendly.com/gabemcwilliams/lets-talk?hide_gdpr_banner=1&text_color=0D0501&primary_color=b9480b',
+                url: 'https://calendly.com/gabemcwilliams/lets-talk?hide_gdpr_banner=1&text_color=6290c3&primary_color=b8470b',
             });
         } else {
             console.warn('Calendly widget not ready yet.');
@@ -51,10 +51,9 @@ export const CalendlyInline = () => {
     }, []);
 
     return (
-<div
-  className="calendly-inline-widget w-full h-full"
-  data-url="https://calendly.com/gabemcwilliams/lets-talk?hide_event_type_details=1&hide_gdpr_banner=1&text_color=0D0501&primary_color=b9480b"
-/>
-
+        <div
+            className="calendly-inline-widget w-full h-full"
+            data-url="https://calendly.com/gabemcwilliams/lets-talk?hide_event_type_details=1&hide_gdpr_banner=1&text_color=6290c3&primary_color=b8470b"
+        />
     );
 };

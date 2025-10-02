@@ -7,63 +7,74 @@ const ZIP_URL =
 const ICONS = {
     base: "/assets/core/about/button_base.svg",
     finger: "/assets/core/about/button_finger_down.svg",
-    box0: "/assets/core/about/button_box_no_icon.svg",
+    box0: "/assets/core/about/button_box_open_base_icon.svg",
     box1: "/assets/core/about/button_box_one_icon.svg",
     box2: "/assets/core/about/button_box_both_icon.svg",
+    box3: "/assets/core/about/button_box_closed_icon.svg",
 } as const;
 
 export default function DownloadProfileButton({width = 200}: { width?: number }) {
     return (
-        <a
-            href={ZIP_URL}
-            download
-            className="group relative inline-block
-       focus:outline-none focus-visible:ring-0
-        focus-visible:shadow-[0_0_0_2px_rgba(0,0,0,0.25)]
- overflow-hidden"
-            aria-label="Download resume and skills package"
-            title="Download resume and skills package"
-            style={{width, height: Math.round(width / 3)}}
-        >
-            {/* Always-visible base */}
-            <img
-                src={ICONS.base}
-                alt=""
-                className="absolute inset-0 w-full h-full object-contain"
-            />
+<a
+  href={ZIP_URL}
+  download
+  className="group relative inline-block overflow-hidden focus:outline-none"
+  aria-label="Download resume and skills package"
 
-            {/* Default finger layer (fades out on hover) */}
-            <img
-                src={ICONS.finger}
-                alt=""
-                className="absolute inset-0 w-full h-full object-contain
-             transition-opacity duration-0 group-hover:duration-700 group-hover:opacity-0"
-            />
+  style={{ width, height: Math.round(width / 3) }}
+>
+  {/* Base */}
+  <img
+    src={ICONS.base}
+    alt=""
+    className="absolute inset-0 w-full h-full object-contain"
+  />
 
-            <img
-                src={ICONS.box0}
-                alt=""
-                className="absolute inset-0 w-full h-full object-contain
-             opacity-0 duration-0
-             group-hover:opacity-100 group-hover:duration-700 group-hover:delay-500"
-            />
+  {/* Finger — instant hide on hover */}
+  <img
+    src={ICONS.finger}
+    alt=""
+    className="absolute inset-0 w-full h-full object-contain
+               transition-none group-hover:opacity-0"
+  />
 
-            <img
-                src={ICONS.box1}
-                alt=""
-                className="absolute inset-0 w-full h-full object-contain
-             opacity-0 duration-0
-             group-hover:opacity-100 group-hover:duration-700 group-hover:delay-700"
-            />
+  {/* Box 0 — instant show on hover */}
+  <img
+    src={ICONS.box0}
+    alt=""
+    className="absolute inset-0 w-full h-full object-contain
+               opacity-0 transition-none
+               group-hover:opacity-100"
+  />
 
-            <img
-                src={ICONS.box2}
-                alt=""
-                className="absolute inset-0 w-full h-full object-contain
-             opacity-0 duration-0
-             group-hover:opacity-100 group-hover:duration-700 group-hover:delay-1000"
-            />
+  {/* Box 1 — quick fade with pause */}
+  <img
+    src={ICONS.box1}
+    alt=""
+    className="absolute inset-0 w-full h-full object-contain
+               opacity-0 transition-opacity duration-300
+               group-hover:opacity-100 group-hover:delay-[800ms]"
+  />
 
-        </a>
+  {/* Box 2 — quick fade with longer pause */}
+  <img
+    src={ICONS.box2}
+    alt=""
+    className="absolute inset-0 w-full h-full object-contain
+               opacity-0 transition-opacity duration-300
+               group-hover:opacity-100 group-hover:delay-[1600ms]"
+  />
+
+  {/* Box 3 — quick fade with longest pause */}
+  <img
+    src={ICONS.box3}
+    alt=""
+    className="absolute inset-0 w-full h-full object-contain
+               opacity-0 transition-opacity duration-300
+               group-hover:opacity-100 group-hover:delay-[2400ms]"
+  />
+</a>
+
+
     );
 }
