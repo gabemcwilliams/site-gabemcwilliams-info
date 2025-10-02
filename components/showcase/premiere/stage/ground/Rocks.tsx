@@ -30,7 +30,7 @@ const rockImages = [
 export const defaultRockLayers: RockLayer[] = [
     {
         imgSet: rockImages,
-        opacity: 1,
+      opacity: 0.1,
         heightVh: .5,
         bottomVh: 50,
         count: 5,
@@ -38,7 +38,7 @@ export const defaultRockLayers: RockLayer[] = [
     },
     {
         imgSet: rockImages,
-        opacity: 1,
+        opacity: 0.3,
         heightVh: 1,
         bottomVh: 50,
         count: 3,
@@ -46,7 +46,7 @@ export const defaultRockLayers: RockLayer[] = [
     },
     {
         imgSet: rockImages,
-        opacity: 1,
+        opacity: 0.5,
         heightVh: 2,
         bottomVh: 40,
         count: 5,
@@ -54,7 +54,7 @@ export const defaultRockLayers: RockLayer[] = [
     },
     {
         imgSet: rockImages,
-        opacity: 1,
+        opacity: 0.7,
         heightVh: 9,
         bottomVh: 15,
         count: 2,
