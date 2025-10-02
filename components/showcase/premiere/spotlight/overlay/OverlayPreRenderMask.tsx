@@ -1,7 +1,7 @@
 // components/showcase/premiere/spotlight/overlay/OverlayPreRenderMask.tsx
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 type Props = {

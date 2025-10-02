@@ -9,37 +9,45 @@ type Inset = { top?: number; right?: number; bottom?: number; left?: number };
 type Offset = { x?: number; y?: number };
 
 type Props = {
+  /** Logo image path (public/) */
   logoSrc?: string;
-  logoTop?: string | number;
-  logoLeft?: string | number;
-  overlayColor?: string;
-  revealMarginPx?: number;
-  zIndex?: number;
+  /** Fixed position fallback (used until anchor is valid) */
+  logoTop?: string | number;   // e.g. '6rem'
+  logoLeft?: string | number;  // e.g. '8rem'
+  /** Dark overlay fill used by the mask */
+  overlayColor?: string;       // e.g. '#201e1f'
+  /** Extra distance outside the spotlight before showing the logo */
+  revealMarginPx?: number;     // e.g. 150
+
+  /** Enable following the navbar anchor from Zustand */
   followNavbar?: boolean;
+  /** If 'match', size to the (inset) anchor rect; if number, force square size (px) */
   followSize?: number | 'match';
-  /** Trim the followed rect to match the visible row inside the wrapper */
+  /** Trim the followed rect to match visible area inside the wrapper */
   anchorInsetPx?: Inset;
   /** Final nudge after insetting */
   offsetPx?: Offset;
-  /** DEBUG: force visible regardless of mask */
-  alwaysShow?: boolean;
-  /** Scale factors: >1 grows, <1 shrinks */
-  scaleX?: number; // default 1.05
-  scaleY?: number; // default 1.15 (taller icon)
+  /** Scale factors when matching size (>1 grows, <1 shrinks) */
+  scaleX?: number;
+  scaleY?: number;
 };
 
+/** ---- Debug toggles (module-scoped; only this file) ---- */
+const DEBUG_FORCE_VISIBLE = false;           // <- flip to false when done
+const LOGO_Z = 2147483647;
+const OVERLAY_Z = 2147483000;
+
 export default function CoreLogoOverlayPortal({
-  logoSrc = '/assets/logos/logo_img.svg',
+  logoSrc = '/assets/core/navbar/logo_growing.svg',
   logoTop = '6rem',
   logoLeft = '8rem',
   overlayColor = '#201e1f',
   revealMarginPx = 150,
-  zIndex = 9999,
+
   followNavbar = true,
   followSize = 'match',
   anchorInsetPx,
   offsetPx,
-  alwaysShow = false,
   scaleX = 1.05,
   scaleY = 1.15,
 }: Props) {
@@ -51,51 +59,59 @@ export default function CoreLogoOverlayPortal({
 
   const [mounted, setMounted] = useState(false);
   const [logoVisible, setLogoVisible] = useState(false);
-  const lastFlipTsRef = useRef(0);
 
+  // Zustand anchor
   const anchor = useLogoAnchorStore((s) => s.anchor);
+  const isFiniteNum = (v: unknown) => Number.isFinite(v as number);
 
+  // Mount flag
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
 
-  // Build mask once
+  // Build global mask svg+defs+overlay once (full-page)
   useEffect(() => {
     if (!mounted) return;
 
+    // Create the SVG overlay
     const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svgEl.id = 'global-mask-svg';
+    svgEl.setAttribute('id', 'global-mask-svg');
     Object.assign(svgEl.style, {
       position: 'fixed',
       inset: '0',
       width: '100vw',
       height: '100vh',
       pointerEvents: 'none',
-      zIndex: String(zIndex),
+      zIndex: String(OVERLAY_Z),
     });
     document.body.appendChild(svgEl);
     svgRef.current = svgEl;
 
     const svg = d3.select(svgEl);
+
+    // defs + mask
     const defs = svg.append('defs');
     const mask = defs.append('mask').attr('id', 'shrink-mask');
 
-    mask.append('rect')
+    mask
+      .append('rect')
       .attr('width', window.innerWidth)
       .attr('height', window.innerHeight)
       .attr('fill', 'white');
 
-    const tracker = mask.append('circle')
+    const tracker = mask
+      .append('circle')
       .attr('id', 'spotlight-tracker')
       .attr('cx', window.innerWidth / 2)
       .attr('cy', window.innerHeight / 2)
-      .attr('r', Math.sqrt(window.innerWidth ** 2 + window.innerHeight ** 2))
+      .attr('r', Math.sqrt(window.innerWidth ** 2 + window.innerHeight ** 2)) // start huge
       .attr('fill', 'black');
 
     trackerRef.current = tracker.node() as SVGCircleElement;
 
-    const rect = svg.append('rect')
+    const rect = svg
+      .append('rect')
       .attr('id', 'global-mask-svg-overlay')
       .attr('x', 0)
       .attr('y', 0)
@@ -112,7 +128,6 @@ export default function CoreLogoOverlayPortal({
       d3.select(overlayRectRef.current)
         .attr('width', window.innerWidth)
         .attr('height', window.innerHeight);
-
       const t = d3.select(trackerRef.current);
       const diag = Math.sqrt(window.innerWidth ** 2 + window.innerHeight ** 2);
       t.attr('r', Math.max(Number(t.attr('r')) || 0, diag));
@@ -128,27 +143,16 @@ export default function CoreLogoOverlayPortal({
       overlayRectRef.current = null;
       trackerRef.current = null;
     };
-  }, [mounted, overlayColor, zIndex]);
+  }, [mounted, overlayColor]);
 
-  // Visibility loop with hysteresis
+  // RAF loop — single-threshold logic; skip entirely if debugging forced-on
   useEffect(() => {
-    if (!mounted) return;
-
-    const SHOW_MARGIN = Math.max(0, revealMarginPx - 40);
-    const HIDE_MARGIN = revealMarginPx + 40;
-    const MIN_HOLD_MS = 220;
+    if (!mounted || DEBUG_FORCE_VISIBLE) return;
 
     const loop = () => {
-      if (alwaysShow) {
-        if (!logoVisible) {
-          setLogoVisible(true);
-          lastFlipTsRef.current = performance.now();
-        }
-        rafRef.current = requestAnimationFrame(loop);
-        return;
-      }
-
       let tracker = trackerRef.current;
+
+      // Re-resolve by ID if our node was replaced
       if (!tracker || !(tracker as any).isConnected) {
         tracker = document.getElementById('spotlight-tracker') as SVGCircleElement | null;
         trackerRef.current = tracker;
@@ -156,33 +160,24 @@ export default function CoreLogoOverlayPortal({
 
       const logoEl = logoRef.current;
       if (!tracker || !logoEl) {
+        // Match the working behavior: hide if spotlight/element isn't available
+        setLogoVisible(false);
         rafRef.current = requestAnimationFrame(loop);
         return;
       }
 
-      const r = parseFloat(tracker.getAttribute('r') || '0');
+      const r  = parseFloat(tracker.getAttribute('r')  || '0');
       const cx = parseFloat(tracker.getAttribute('cx') || '0');
       const cy = parseFloat(tracker.getAttribute('cy') || '0');
 
       const box = logoEl.getBoundingClientRect();
       const lx = box.left + box.width / 2;
       const ly = box.top + box.height / 2;
+
       const dist = Math.hypot(cx - lx, cy - ly);
 
-      const now = performance.now();
-      const timeSinceFlip = now - lastFlipTsRef.current;
-
-      if (!logoVisible) {
-        if (dist > (r + SHOW_MARGIN) && timeSinceFlip >= MIN_HOLD_MS) {
-          setLogoVisible(true);
-          lastFlipTsRef.current = now;
-        }
-      } else {
-        if (dist < (r + HIDE_MARGIN) && timeSinceFlip >= MIN_HOLD_MS) {
-          setLogoVisible(false);
-          lastFlipTsRef.current = now;
-        }
-      }
+      // Single threshold: visible only when **outside** the spotlight
+      setLogoVisible(dist > (r + (revealMarginPx ?? 150)));
 
       rafRef.current = requestAnimationFrame(loop);
     };
@@ -192,70 +187,91 @@ export default function CoreLogoOverlayPortal({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     };
-  }, [mounted, revealMarginPx, alwaysShow, logoVisible]);
+  }, [mounted, revealMarginPx]);
+
+  // Force-on when debugging
+  useEffect(() => {
+    if (!mounted) return;
+    if (DEBUG_FORCE_VISIBLE) {
+      setLogoVisible(true);
+      return () => {};
+    }
+  }, [mounted]);
 
   if (!mounted) return null;
 
-  // ----- Follow logic with inset + offset (+ scaling) ------------------------
-  const useAnchor = followNavbar && !!anchor;
-
+  // ----- Follow-from-Zustand with safe fallback (no NaNs) -----
   const inset = {
     top: anchorInsetPx?.top ?? 2,
     right: anchorInsetPx?.right ?? 0,
     bottom: anchorInsetPx?.bottom ?? 2,
     left: anchorInsetPx?.left ?? 6,
   };
-
   const offset = {
     x: offsetPx?.x ?? 0,
     y: offsetPx?.y ?? -2,
   };
-
-  // Utility: snap to device pixels to avoid sub-pixel fuzz
   const snap = (v: number) => {
     const dpr = window.devicePixelRatio || 1;
     return Math.round(v * dpr) / dpr;
   };
+  const safe = (n: number) => (Number.isFinite(n) ? n : 0);
 
-  let top: string, left: string, width: string, height: string;
+  const canFollow =
+    followNavbar &&
+    anchor &&
+    isFiniteNum(anchor.left) &&
+    isFiniteNum(anchor.top) &&
+    isFiniteNum(anchor.width) &&
+    isFiniteNum(anchor.height) &&
+    (anchor.width as number) > 0 &&
+    (anchor.height as number) > 0;
 
-  if (useAnchor) {
-    const a = anchor!;
-    const baseW = Math.max(0, a.width  - inset.left - inset.right);
-    const baseH = Math.max(0, a.height - inset.top  - inset.bottom);
+  let topCss: string, leftCss: string, widthCss: string, heightCss: string;
 
-    const scaledW = baseW * scaleX;
-    const scaledH = baseH * scaleY;
+  if (canFollow) {
+    const a = anchor as { left: number; top: number; width: number; height: number };
+    const baseW = Math.max(0, safe(a.width)  - safe(inset.left) - safe(inset.right));
+    const baseH = Math.max(0, safe(a.height) - safe(inset.top)  - safe(inset.bottom));
 
-    const leftPx = snap(a.left + inset.left + offset.x - (scaledW - baseW) / 2);
-    const topPx  = snap(a.top  + inset.top  + offset.y - (scaledH - baseH) / 2);
+    const sx = Number.isFinite(scaleX) ? scaleX : 1;
+    const sy = Number.isFinite(scaleY) ? scaleY : 1;
 
-    left  = `${leftPx}px`;
-    top   = `${topPx}px`;
-    width = followSize === 'match' ? `${snap(scaledW)}px` : `${followSize}px`;
-    height= followSize === 'match' ? `${snap(scaledH)}px` : `${followSize}px`;
+    const scaledW = Math.max(1, baseW * sx);
+    const scaledH = Math.max(1, baseH * sy);
+
+    const leftPx = snap(safe(a.left) + safe(inset.left) + safe(offset.x) - (scaledW - baseW) / 2);
+    const topPx  = snap(safe(a.top)  + safe(inset.top)  + safe(offset.y) - (scaledH - baseH) / 2);
+
+    leftCss   = `${leftPx}px`;
+    topCss    = `${topPx}px`;
+    widthCss  = followSize === 'match' ? `${snap(scaledW)}px` : `${Number(followSize) || 150}px`;
+    heightCss = followSize === 'match' ? `${snap(scaledH)}px` : `${Number(followSize) || 150}px`;
   } else {
-    left  = typeof logoLeft === 'number' ? `${logoLeft}px` : logoLeft;
-    top   = typeof logoTop  === 'number' ? `${logoTop}px`  : logoTop;
-    width = '150px';
-    height= '150px';
+    leftCss   = typeof logoLeft === 'number' ? `${logoLeft}px` : logoLeft;
+    topCss    = typeof logoTop  === 'number' ? `${logoTop}px`  : logoTop;
+    widthCss  = '150px';
+    heightCss = '150px';
   }
 
+  // Portal the logo wrapper (force top-most z-index)
   return createPortal(
     <div
       ref={logoRef}
       style={{
         position: 'fixed',
-        top,
-        left,
-        zIndex: zIndex + 1,
+        top: topCss,
+        left: leftCss,
+        zIndex: LOGO_Z,      // guaranteed above the SVG overlay
         pointerEvents: 'none',
         opacity: logoVisible ? 1 : 0,
-        transition: 'opacity 80ms linear',
-        width,
-        height,
-        // final tiny nudge (if needed)
-        transform: 'translate(-3px, 2.3px)',
+        transition: 'opacity 60ms linear',
+        width: widthCss,
+        height: heightCss,
+        // Optional debug outline so you see it even if the image 404s:
+        outline: DEBUG_FORCE_VISIBLE ? '2px dashed #9cf' : 'none',
+        outlineOffset: '2px',
+        background: DEBUG_FORCE_VISIBLE ? 'rgba(80,120,200,0.08)' : 'transparent',
       }}
       aria-hidden={!logoVisible}
     >
@@ -263,12 +279,7 @@ export default function CoreLogoOverlayPortal({
         src={logoSrc}
         alt=""
         draggable={false}
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'contain',
-          userSelect: 'none',
-        }}
+        style={{ width: '100%', height: '100%', objectFit: 'contain', userSelect: 'none' }}
       />
     </div>,
     document.body

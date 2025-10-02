@@ -326,7 +326,7 @@ export default function Home() {
                                                         .styleTween('stroke', () => d3.interpolateRgb('#B9480B', '#623516'))
                                                         .style('opacity', 0.8)
                                                         .on('end', () => {
-                                                            window.location.href = `/premiere/?cx=${x}&cy=${adjustedY}&r=${finalRadius}&navHeight=${navHeight}`;
+                                                            window.location.href = `/premiere`;
                                                         });
                                                 });
                                         });
@@ -458,12 +458,12 @@ export default function Home() {
                 ref={mainRef}
                 style={{zIndex: 500, height: '33vh'}}
                 className="
-          flex-grow min-h-0 h-full
-          bg-[var(--background)]
-          text-[var(--TEXT_PRIMARY)]
-          flex justify-start px-[8rem] pt-[6rem]
-          relative
-        "
+                            flex-grow min-h-0 h-full
+                            bg-[var(--background)]
+                            text-[var(--TEXT_PRIMARY)]
+                            flex justify-start px-[8rem] pt-[6rem]
+                            relative
+                            "
             >
                 <div className="max-w-screen-md relative">
                     <h1 className="text-[4rem] font-bold leading-tight">

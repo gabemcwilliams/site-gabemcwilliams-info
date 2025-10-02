@@ -128,7 +128,7 @@ export default function PremierLogoOverlayPortal() {
                 <Image
                     tabIndex={-1}
                     className="select-none focus:outline-none cursor-pointer"
-                    src="/assets/logos/base_tree_favicon_transparent_bg.svg"
+                    src='/assets/core/navbar/logo_growing.svg'
                     alt="Home"
                     width={100}
                     height={100}
