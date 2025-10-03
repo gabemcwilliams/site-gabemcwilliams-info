@@ -2,7 +2,7 @@
 import Navbar from "@/components/core/Navbar";
 import Footer from "@/components/core/Footer";
 
-import CoreLogoOverlayPortal from "@/components/core/overlay/CoreLogoOverlayPortal";
+import LandingPageCollapsingMask from "@/components/core/landing/LandingPageCollapsingMask";
 
 import React from "react";
 
@@ -15,8 +15,10 @@ export default function MainLayout({children}: { children: React.ReactNode }) {
 
             <div className="flex flex-col min-h-screen relative z-[1]">
 
-                <CoreLogoOverlayPortal/>
-
+                <LandingPageCollapsingMask
+                    anchorInsetPx={{top: 11.4, left: 0}}
+                    offsetPx={{x: 0, y: -5}}
+                />
 
 
                 <Navbar/>

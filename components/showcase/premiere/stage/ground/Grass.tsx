@@ -1,8 +1,8 @@
 'use client';
 
 import React, {memo, useMemo, useEffect, useState} from 'react';
-import {depthsFromBottomVh} from '@/components/utils/depths';
-import {useViewportClass} from '@/hooks/useViewportClass';
+import {computeGroundDepth} from '@/components/utils/computeGroundDepth';
+import {useStageGroundSizeClass} from '@/hooks/useStageGroundSizeClass';
 
 export interface GrassProps {
     visible?: boolean;
@@ -30,8 +30,8 @@ const grassImages = [
 export const defaultGrassLayers: GrassLayer[] = [
     {
         imgSet: grassImages,
-        opacity: 0.4,
-        heightVh: 1.5,
+        opacity: 0.2,
+        heightVh: .5,
         bottomVh: 55,
         count: 5,
         filter: 'grayscale(45%) brightness(0.45) contrast(1.05)'
@@ -46,7 +46,7 @@ export const defaultGrassLayers: GrassLayer[] = [
     },
     {
         imgSet: grassImages,
-        opacity: 0.3,
+        opacity: 0.4,
         heightVh: 4,
         bottomVh: 35,
         count: 6,
@@ -54,7 +54,7 @@ export const defaultGrassLayers: GrassLayer[] = [
     },
     {
         imgSet: grassImages,
-        opacity: 0.7,
+        opacity: 0.5,
         heightVh: 7,
         bottomVh: 25,
         count: 5,
@@ -181,7 +181,7 @@ function Grass(
 
     useEffect(markMountedEffect, []);
 
-    const vp = useViewportClass();
+    const vp = useStageGroundSizeClass();
 
     // Responsive gutter
     const centerBlockPct =
@@ -213,7 +213,7 @@ function Grass(
                         width: '100%',
                         height: `${layer.heightVh}vh`,
                         opacity: layer.opacity,
-                        zIndex: depthsFromBottomVh(layer.bottomVh ?? 0, 0, 100),
+                        zIndex: computeGroundDepth(layer.bottomVh ?? 0, 0, 100),
                         filter: layer.filter,
                         overflow: 'visible',
                     }}

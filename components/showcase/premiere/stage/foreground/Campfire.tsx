@@ -8,7 +8,7 @@ import React, {
     useState,
     type CSSProperties,
 } from 'react';
-import {useMaskLayoutStore} from '@/states/showcase/premiere/useMaskLayoutStore';
+import {usePOIRevealStore} from '@/states/showcase/premiere/usePOIRevealStore';
 
 type RingSpec = {
     z: number;
@@ -271,7 +271,7 @@ function Campfire(
         const flameEl = idx === 0 ? flameARef.current : flameBRef.current;
         if (!flameEl) return;
         const rect = flameEl.getBoundingClientRect();
-        useMaskLayoutStore.setState((s) => ({
+        usePOIRevealStore.setState((s) => ({
             items: {
                 ...s.items,
                 fire: {

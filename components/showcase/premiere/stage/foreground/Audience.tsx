@@ -8,7 +8,7 @@ import React, {
   useState,
   type CSSProperties,
 } from 'react';
-import { useMaskLayoutStore } from '@/states/showcase/premiere/useMaskLayoutStore';
+import { usePOIRevealStore } from '@/states/showcase/premiere/usePOIRevealStore';
 
 /* =========================
    Types
@@ -162,7 +162,7 @@ function Audience({
     if (!el) return;
     const rect = el.getBoundingClientRect();
 
-    useMaskLayoutStore.setState((s) => ({
+    usePOIRevealStore.setState((s) => ({
       items: {
         ...s.items,
         audience: {

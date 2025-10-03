@@ -19,12 +19,20 @@ export default function AboutPage() {
                     About me
                 </h1>
 
-                <div className="absolute right-0 bottom-0">
-                    <DownloadProfileButton
-                        width={150}
-
-                    />
+                <div
+                    className="
+                                absolute
+                                right-0 bottom-0
+                                -mr-6  translate-y-[-10%]   /* mobile */
+                                sm:-mr-12 sm:translate-y-[-20%]  /* tablets */
+                                md:-mr-18 md:translate-y-[-30%]  /* desktops */
+                                lg:-mr-23 lg:translate-y-[-40%]  /* large screens */
+                              "
+                >
+                    <DownloadProfileButton width={200}/>
                 </div>
+
+
             </div>
 
             <p className="text-xl mb-24">

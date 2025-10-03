@@ -15,7 +15,7 @@ import Campfire from '@/components/showcase/premiere/stage/foreground/Campfire';
 import Audience from '@/components/showcase/premiere/stage/foreground/Audience';
 
 // === Overlay Components ===
-import FullscreenFadeCover from '@/components/showcase/premiere/spotlight/overlay/FullScreenFadeCover';
+import RouteTransitionCover from '@/components/showcase/premiere/spotlight/overlay/RouteTransitionCover';
 
 // === Background layout type ===
 interface BGLayoutParams {
@@ -147,7 +147,7 @@ export default function AppStageSetting() {
             }}
         >
             {/* OVERLAY */}
-<FullscreenFadeCover
+<RouteTransitionCover
   color="linear-gradient(to bottom, black 1%, #623516 100%)"
   visibleTimer={.05}   // hold for 5 seconds
   fadeTimer={.5}      // no fade

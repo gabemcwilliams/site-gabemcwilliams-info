@@ -1,8 +1,8 @@
 'use client';
 
 import React, {memo, useMemo, useEffect, useState} from 'react';
-import {depthsFromBottomVh} from '@/components/utils/depths';
-import {useViewportClass} from '@/hooks/useViewportClass';
+import {computeGroundDepth} from '@/components/utils/computeGroundDepth';
+import {useStageGroundSizeClass} from '@/hooks/useStageGroundSizeClass';
 
 export interface RocksProps {
     visible?: boolean;
@@ -30,7 +30,7 @@ const rockImages = [
 export const defaultRockLayers: RockLayer[] = [
     {
         imgSet: rockImages,
-        opacity: 1,
+      opacity: 0.1,
         heightVh: .5,
         bottomVh: 50,
         count: 5,
@@ -38,7 +38,7 @@ export const defaultRockLayers: RockLayer[] = [
     },
     {
         imgSet: rockImages,
-        opacity: 1,
+        opacity: 0.3,
         heightVh: 1,
         bottomVh: 50,
         count: 3,
@@ -46,7 +46,7 @@ export const defaultRockLayers: RockLayer[] = [
     },
     {
         imgSet: rockImages,
-        opacity: 1,
+        opacity: 0.5,
         heightVh: 2,
         bottomVh: 40,
         count: 5,
@@ -54,7 +54,7 @@ export const defaultRockLayers: RockLayer[] = [
     },
     {
         imgSet: rockImages,
-        opacity: 1,
+        opacity: 0.7,
         heightVh: 9,
         bottomVh: 15,
         count: 2,
@@ -187,7 +187,7 @@ function Rocks(
     useEffect(markMountedEffect, []);
 
     // Pick gutter width per viewport
-    const vp = useViewportClass();
+    const vp = useStageGroundSizeClass();
     const centerBlockPct =
         vp === 'mobile' ? 75 :      // very wide gap on mobile
             vp === 'desktop' ? 70 :     // default gap
@@ -217,7 +217,7 @@ function Rocks(
                         width: '100%',
                         height: `${layer.heightVh}vh`,
                         opacity: layer.opacity,
-                        zIndex: depthsFromBottomVh(layer.bottomVh ?? 0, 0, 200),
+                        zIndex: computeGroundDepth(layer.bottomVh ?? 0, 0, 200),
                         filter: layer.filter,
                         overflow: 'visible',
                     }}

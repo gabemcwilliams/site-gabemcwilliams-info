@@ -1,7 +1,12 @@
 'use client';
 
+import {useRouter} from 'next/navigation';
+
+import {useSpotlightMaskStore} from '@/states/showcase/premiere/useSpotlightMaskStore';
+
 import React, {useEffect, useRef, useState} from 'react';
 import * as d3 from 'd3';
+
 
 export default function Home() {
     // ---------------------------------------------------------
@@ -13,6 +18,9 @@ export default function Home() {
     // ---------------------------------------------------------
     // Refs
     // ---------------------------------------------------------
+
+    const router = useRouter();
+
     const dotRef = useRef<SVGSVGElement | null>(null);           // Page SVG (ball)
     const spanRef = useRef<HTMLSpanElement | null>(null);        // Anchor for initial ball position
     const mainRef = useRef<HTMLElement | null>(null);            // Layout container
@@ -34,6 +42,7 @@ export default function Home() {
     const maskColor = '#201e1f';
 
     const [ballPosition, setBallPosition] = useState<{ x: number; y: number } | null>(null);
+
 
     // ---------------------------------------------------------
     // Main animation effect
@@ -325,9 +334,17 @@ export default function Home() {
                                                         .styleTween('fill', () => d3.interpolateRgb('#B9480B', '#623516'))
                                                         .styleTween('stroke', () => d3.interpolateRgb('#B9480B', '#623516'))
                                                         .style('opacity', 0.8)
+                                                        // inside your d3 on('end') on Landing
                                                         .on('end', () => {
-                                                            window.location.href = `/premiere/?cx=${x}&cy=${adjustedY}&r=${finalRadius}&navHeight=${navHeight}`;
+                                                            const api = useSpotlightMaskStore.getState();
+                                                            api.setSeed({cx: x, cy: adjustedY, r: finalRadius}); // one-shot seed
+                                                            api.setEnabled(true);
+
+                                                            queueMicrotask(() => {
+                                                                router.push('/premiere'); // no query params
+                                                            });
                                                         });
+
                                                 });
                                         });
                                 });
@@ -458,12 +475,12 @@ export default function Home() {
                 ref={mainRef}
                 style={{zIndex: 500, height: '33vh'}}
                 className="
-          flex-grow min-h-0 h-full
-          bg-[var(--background)]
-          text-[var(--TEXT_PRIMARY)]
-          flex justify-start px-[8rem] pt-[6rem]
-          relative
-        "
+                            flex-grow min-h-0 h-full
+                            bg-[var(--background)]
+                            text-[var(--TEXT_PRIMARY)]
+                            flex justify-start px-[8rem] pt-[6rem]
+                            relative
+                            "
             >
                 <div className="max-w-screen-md relative">
                     <h1 className="text-[4rem] font-bold leading-tight">

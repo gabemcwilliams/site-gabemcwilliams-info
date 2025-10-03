@@ -1,4 +1,4 @@
-// hooks/useViewportClass.ts
+// hooks/useStageGroundSizeClass.ts
 
 import { useState, useEffect } from 'react';
 
@@ -15,10 +15,10 @@ import { useState, useEffect } from 'react';
  *   'desktop'   → 600px–1980px
  *   'ultrawide' → > 1980px
  */
-export type ViewportClass = 'mobile' | 'desktop' | 'ultrawide';
+export type useStageGroundSizeClass = 'mobile' | 'desktop' | 'ultrawide';
 
-export function useViewportClass(): ViewportClass {
-  const [vp, setVp] = useState<ViewportClass>('desktop');
+export function useStageGroundSizeClass(): useStageGroundSizeClass {
+  const [vp, setVp] = useState<useStageGroundSizeClass>('desktop');
 
   useEffect(() => {
     const update = () => {

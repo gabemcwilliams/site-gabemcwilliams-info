@@ -2,7 +2,7 @@
 'use client';
 
 import {useEffect, useState, useId, useRef} from 'react';
-import {useMaskLayoutStore} from "@/states/showcase/premiere/useMaskLayoutStore";
+import {usePOIRevealStore} from "@/states/showcase/premiere/usePOIRevealStore";
 
 const MOON_BASE = '/assets/showcase/premiere/moons/moon_base.svg';
 const MOON_BLOOD = '/assets/showcase/premiere/moons/moon_blood.svg';
@@ -132,7 +132,7 @@ export default function Moon(
     const SHADOW_PAD = Math.max(3, Math.ceil(3 * maskVars.featherPx + 1));
 
     // ---------- Publish coarse placement (vw/vh + src) ----------
-    const setItem = useMaskLayoutStore(s => s.setItem);
+    const setItem = usePOIRevealStore(s => s.setItem);
     useEffect(() => {
         const xVW = placement.leftVW
             ? parseFloat(placement.leftVW)

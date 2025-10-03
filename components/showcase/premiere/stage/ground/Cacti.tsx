@@ -1,8 +1,8 @@
 'use client';
 
 import React, {memo, useMemo, useEffect, useState} from 'react';
-import {depthsFromBottomVh} from '@/components/utils/depths';
-import {useViewportClass} from '@/hooks/useViewportClass';
+import {computeGroundDepth} from '@/components/utils/computeGroundDepth';
+import {useStageGroundSizeClass} from '@/hooks/useStageGroundSizeClass';
 
 export interface CactiProps {
     visible?: boolean;
@@ -189,7 +189,7 @@ function Cacti(
 
     useEffect(markMountedEffect, []);
 
-    const vp = useViewportClass();
+    const vp = useStageGroundSizeClass();
 
     // responsive middle gutter
     const centerBlockPct =
@@ -221,7 +221,7 @@ function Cacti(
                         width: '100%',
                         height: `${layer.heightVh}vh`,
                         opacity: layer.opacity,
-                        zIndex: depthsFromBottomVh(layer.bottomVh ?? 0, 0, 0),
+                        zIndex: computeGroundDepth(layer.bottomVh ?? 0, 0, 0),
                         filter: layer.filter,
                         overflow: 'visible',
                     }}
