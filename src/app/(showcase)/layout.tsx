@@ -10,6 +10,8 @@ export default function ShowcaseLayout({children}: { children: React.ReactNode }
             <div className="flex flex-col min-h-screen">
                 <main className="flex-grow">
                     <PremiereSpotlightSearchMask
+                        anchorInsetPx={{top: 0, left: 0}}
+                        offsetPx={{x: 0, y: 3}}
                         // debug
                     />
                     {children}
