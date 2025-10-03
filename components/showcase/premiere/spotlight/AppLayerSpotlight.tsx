@@ -31,7 +31,7 @@ type AppLayerSpotlightProps = {
     initialOverlayVisible: number;
 
     initiallyEnabled?: boolean;
-    onMaskReady?: boolean;
+    onMaskReady?:  undefined | (() => void) ;
 };
 
 export default function AppLayerSpotlight({
