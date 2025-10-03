@@ -20,7 +20,6 @@ export default function MainLayout({children}: { children: React.ReactNode }) {
                     offsetPx={{x: 0, y: -5}}
                 />
 
-
                 <Navbar/>
                 <main className="flex-grow">{children}</main>
                 <Footer/>
