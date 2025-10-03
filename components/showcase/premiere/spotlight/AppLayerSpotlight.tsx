@@ -31,15 +31,16 @@ type AppLayerSpotlightProps = {
     initialOverlayVisible: number;
 
     initiallyEnabled?: boolean;
-    onMaskReady?:  undefined | (() => void) ;
+    onMaskReady?: undefined | (() => void);
 };
 
-export default function AppLayerSpotlight({
-                                              initialOverlayVisible,
-                                              onMaskReady,
+export default function AppLayerSpotlight(
+    {
+        initialOverlayVisible,
+        onMaskReady,
 
-                                              initiallyEnabled,
-                                          }: AppLayerSpotlightProps) {
+        initiallyEnabled,
+    }: AppLayerSpotlightProps) {
     return (
         <Suspense fallback={<SpotlightHydrationMask/>}>
             <Spotlight
@@ -88,14 +89,10 @@ function Spotlight(
     {
         initialOverlayVisible,
         onMaskReady,
-        initialCx,
-        initialCy,
         initiallyEnabled,
     }: {
         initialOverlayVisible: number;
         onMaskReady?: () => void;
-        initialCx?: number;
-        initialCy?: number;
         initiallyEnabled?: boolean;
     }) {
     // Subscribe to Zustand for reactive rerenders
