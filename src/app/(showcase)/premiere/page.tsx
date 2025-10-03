@@ -173,7 +173,6 @@ export default function Premiere() {
                     onMaskReady={handleMaskReady}
                     // On SPA push from Landing: `initialMask` is null → component consumes seed from store.
                     // On reload/deep-link: pass explicit defaults so the circle starts where it belongs.
-
                     initiallyEnabled={initialMask ? ENABLE_ON_RELOAD : undefined}
                 />
             </div>
