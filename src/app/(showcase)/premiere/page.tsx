@@ -1,20 +1,101 @@
 // app/(showcase)/premiere/page.tsx
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useSpotlightMaskStore } from '@/states/showcase/premiere/useSpotlightMaskStore';
 import AppLayerSpotlight from '@/components/showcase/premiere/spotlight/AppLayerSpotlight';
+import { useSpotlightMaskStore } from '@/states/showcase/premiere/useSpotlightMaskStore';
+import { usePOIRevealStore } from '@/states/showcase/premiere/usePOIRevealStore';
 
-import { getInitialSpotlightMask, getInitialSpotlightEnabled } from '@/states/showcase/premiere/useSpotlightMaskStore';
+// === Route-specific default for reload / deep-link ===
+const PREMIERE_DEFAULT = { cx: 870, cy: 360, r: 64 };
+// Start enabled on hard reload/deep link
+const ENABLE_ON_RELOAD = true;
 
-const { cx, cy, r } = getInitialSpotlightMask();
-const enabled = getInitialSpotlightEnabled();
+// ---------- tiny browser guards ----------
+const isBrowser = () => typeof window !== 'undefined';
 
-// import SSRPreRenderMask from '@/components/showcase/premiere/spotlight/overlay/SSRPreRenderMask';
-// import PremiereClient from './PremiereClient';
+const getNavType = (): PerformanceNavigationTiming['type'] | undefined => {
+  try {
+    if (!isBrowser() || typeof performance === 'undefined' || typeof performance.getEntriesByType !== 'function') {
+      return undefined;
+    }
+    const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    return nav?.type;
+  } catch {
+    return undefined;
+  }
+};
 
-// Stage loads on the client only (no server HTML to flash)
+const ssGet = (k: string): string | null => {
+  try {
+    return isBrowser() ? window.sessionStorage.getItem(k) : null;
+  } catch {
+    return null;
+  }
+};
+
+const ssRemove = (k: string) => {
+  try {
+    if (isBrowser()) window.sessionStorage.removeItem(k);
+  } catch {
+    /* ignore */
+  }
+};
+
+// ---------- compute initial mask for this mount (sync, before children render) ----------
+function useInitialPremiereMask() {
+  const evalRef = useRef(false);
+  const initialRef = useRef<{ cx?: number; cy?: number; r?: number } | null>(null);
+
+  if (!evalRef.current) {
+    evalRef.current = true;
+
+    const isReload = getNavType() === 'reload';
+    const cameFromLanding = ssGet('cameFromLanding') === '1';
+
+    if (isReload || !cameFromLanding) {
+      // Deep link / hard reload → use route defaults
+      initialRef.current = { ...PREMIERE_DEFAULT };
+    } else {
+      // SPA handoff → let AppLayerSpotlight consume seed from store
+      initialRef.current = null;
+    }
+
+    // one-shot
+    ssRemove('cameFromLanding');
+  }
+
+  return initialRef.current;
+}
+
+// ---------- Reset progress only on reload/deep-link (not mask coords) ----------
+function useResetGameOnReloadOrDeepLink() {
+  const ran = useRef(false);
+
+  useEffect(() => {
+    if (ran.current) return;
+    ran.current = true;
+
+    const isReload = getNavType() === 'reload';
+    const cameFromLanding = ssGet('cameFromLanding') === '1';
+
+    if (isReload || !cameFromLanding) {
+      // Reset only POI progress (keep spotlight coords/size)
+      // If you implemented resetProgress() use that; otherwise call your reset()
+      // Example (choose one you have):
+      // usePOIRevealStore.getState().resetProgress?.();
+      usePOIRevealStore.getState().reset?.();
+
+      // Don’t recenter mask; only ensure enabled state
+      useSpotlightMaskStore.getState().setEnabled(ENABLE_ON_RELOAD);
+    }
+
+    ssRemove('cameFromLanding');
+  }, []);
+}
+
+// Stage loads on the client only (no SSR flash)
 const AppStageSettingLazy = dynamic(
   () => import('@/components/showcase/premiere/stage/AppStageSetting'),
   { ssr: false, loading: () => null }
@@ -23,12 +104,14 @@ const AppStageSettingLazy = dynamic(
 export default function Premiere() {
   const spotlightOn = useSpotlightMaskStore((s) => s.enabled);
 
-
+  // Seed/reset policy
+  const initialMask = useInitialPremiereMask();
+  useResetGameOnReloadOrDeepLink();
 
   // 1) maskReady flips when the masked rect has actually painted
   const [maskReady, setMaskReady] = useState(false);
 
-  // 2) allowStageMount gates the actual mount (prevents any pre-paint)
+  // 2) gate Stage mount until mask is present (prevents pre-paint)
   const [allowStageMount, setAllowStageMount] = useState(false);
 
   // 3) tiny hydration tick so the stage fade looks smooth
@@ -38,9 +121,7 @@ export default function Premiere() {
     return () => cancelAnimationFrame(id);
   }, []);
 
-  // When the spotlight says it's ready, allow the stage to mount *next* paint
   const handleMaskReady = () => {
-    // Two rAFs = guarantee the masked rect is on-screen before we reveal anything
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         setMaskReady(true);
@@ -49,7 +130,7 @@ export default function Premiere() {
     });
   };
 
-  // Optional: start downloading the Stage bundle ASAP (still won’t mount until allowed)
+  // Optional: prefetch the Stage bundle ASAP
   useEffect(() => {
     void import('@/components/showcase/premiere/stage/AppStageSetting');
   }, []);
@@ -59,13 +140,13 @@ export default function Premiere() {
     position: 'relative',
     height: '100vh',
     overflow: 'hidden',
-    background: "#201e1f",
+    background: '#201e1f',
   }), []);
 
   const overlayWrapperStyle = useMemo<React.CSSProperties>(() => ({
     position: 'fixed',
     inset: 0,
-    zIndex: 1988, // < 2000 so your “home” icon remains above
+    zIndex: 1988, // keep below home icon
     opacity: (spotlightOn || !maskReady) ? 1 : 0,
     pointerEvents: (spotlightOn || !maskReady) ? 'auto' : 'none',
     transition: maskReady ? 'opacity 800ms ease' : 'none',
@@ -76,7 +157,7 @@ export default function Premiere() {
     position: 'absolute',
     inset: 0,
     zIndex: 0,
-    display: allowStageMount ? 'block' : 'none', // no DOM until allowed
+    display: allowStageMount ? 'block' : 'none',
     opacity: stageFadeIn ? 1 : 0,
     transform: stageFadeIn ? 'none' : 'translateY(0.5vh) scale(0.995)',
     transition: 'opacity 260ms ease, transform 260ms ease',
@@ -90,10 +171,12 @@ export default function Premiere() {
         <AppLayerSpotlight
           initialOverlayVisible={1}
           onMaskReady={handleMaskReady}
-          initialCx={cx}
-          initialCy={cy}
-          initialR={r}
-          initiallyEnabled={enabled}
+          // On SPA push from Landing: `initialMask` is null → component consumes seed from store.
+          // On reload/deep-link: pass explicit defaults so the circle starts where it belongs.
+          initialCx={initialMask?.cx}
+          initialCy={initialMask?.cy}
+          initialR={initialMask?.r}
+          initiallyEnabled={initialMask ? ENABLE_ON_RELOAD : undefined}
         />
       </div>
 

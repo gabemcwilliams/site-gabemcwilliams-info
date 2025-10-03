@@ -2,8 +2,7 @@
 
 import { create } from 'zustand';
 
-// Shared shape for all reveal items
-export type RevealId = 'audience' | 'cat' | 'fire' | 'moon'
+export type RevealId = 'audience' | 'cat' | 'fire' | 'moon';
 
 export type RevealItem = {
   id: RevealId;
@@ -26,16 +25,22 @@ type MaskLayoutState = {
   mouseX: number;
   mouseY: number;
   setMousePosition: (x: number, y: number) => void;
+
+  // NEW: resets
+  reset: () => void;
+  resetProgress: () => void;
 };
 
-/** Combined store for layout and mouse position */
-export const usePOIRevealStore = create<MaskLayoutState>((set) => ({
-  items: {
-    audience: { id: 'audience', src: '', xVW: 0, yVH: 0, scale: 1, visible: false },
-    cat:      { id: 'cat',      src: '', xVW: 0, yVH: 0, scale: 1, visible: true  },
-    fire:     { id: 'fire',     src: '', xVW: 0, yVH: 0, scale: 1, visible: false },
-    moon:     { id: 'moon',     src: '', xVW: 0, yVH: 0, scale: 1, visible: false },
-  } as const satisfies Record<RevealId, RevealItem>, // <-- safety net
+// Keep your initial shapes in a factory so we can recreate fresh objects
+const createInitialItems = (): Record<RevealId, RevealItem> => ({
+  audience: { id: 'audience', src: '', xVW: 0, yVH: 0, scale: 1, visible: false },
+  cat:      { id: 'cat',      src: '', xVW: 0, yVH: 0, scale: 1, visible: true  },
+  fire:     { id: 'fire',     src: '', xVW: 0, yVH: 0, scale: 1, visible: false },
+  moon:     { id: 'moon',     src: '', xVW: 0, yVH: 0, scale: 1, visible: false },
+});
+
+export const usePOIRevealStore = create<MaskLayoutState>((set, get) => ({
+  items: createInitialItems(),
 
   mouseX: 0,
   mouseY: 0,
@@ -49,4 +54,34 @@ export const usePOIRevealStore = create<MaskLayoutState>((set) => ({
     })),
 
   setMousePosition: (x, y) => set(() => ({ mouseX: x, mouseY: y })),
+
+  // Full reset to initial shape
+  reset: () =>
+    set({
+      items: createInitialItems(),
+      mouseX: 0,
+      mouseY: 0,
+    }),
+
+  // Keep layout; clear progress/measurements; restore default visibility
+  resetProgress: () =>
+    set((state) => {
+      const entries = Object.entries(state.items) as [RevealId, RevealItem][];
+      const next = Object.fromEntries(
+        entries.map(([id, it]) => [
+          id,
+          {
+            ...it,
+            // your default visibility: cat=true, others=false
+            visible: id === 'cat',
+            screenX: undefined,
+            screenY: undefined,
+            width: undefined,
+            height: undefined,
+          } as RevealItem,
+        ])
+      ) as Record<RevealId, RevealItem>;
+
+      return { items: next };
+    }),
 }));

@@ -334,15 +334,17 @@ export default function Home() {
                                                         .styleTween('fill', () => d3.interpolateRgb('#B9480B', '#623516'))
                                                         .styleTween('stroke', () => d3.interpolateRgb('#B9480B', '#623516'))
                                                         .style('opacity', 0.8)
+                                                        // inside your d3 on('end') on Landing
                                                         .on('end', () => {
-                                                            useSpotlightMaskStore.getState().setAll({
-                                                                cx: x,
-                                                                cy: adjustedY,
-                                                                r: finalRadius
+                                                            const api = useSpotlightMaskStore.getState();
+                                                            api.setSeed({cx: x, cy: adjustedY, r: finalRadius}); // one-shot seed
+                                                            api.setEnabled(true);
+
+                                                            queueMicrotask(() => {
+                                                                router.push('/premiere'); // no query params
                                                             });
-                                                            useSpotlightMaskStore.getState().setEnabled(true); // if you want spotlight on
-                                                            router.push('/premiere'); // no query params
                                                         });
+
                                                 });
                                         });
                                 });
