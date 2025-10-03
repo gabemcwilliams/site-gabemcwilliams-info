@@ -8,6 +8,9 @@ import {createPortal} from 'react-dom';
 import {useLogoAnchorStore} from '@/states/core/useLogoAnchorStore';
 
 export default function NavBar() {
+
+
+
     const pathname = usePathname();
     const isHome = pathname === '/' || pathname === '/premiere';
 
@@ -63,6 +66,7 @@ export default function NavBar() {
                 const width = snap(r.width);
                 const height = snap(r.height);
 
+                    console.debug('[NavBar anchor]', { left, top, width, height, ts: Date.now() });
                 setAnchor({left, top}); // local
                 setGlobalAnchor({
                     left,
@@ -73,6 +77,8 @@ export default function NavBar() {
                     centerY: top + height / 2,
                     ts: performance.now(),
                 });
+
+
             });
         };
 
@@ -83,6 +89,8 @@ export default function NavBar() {
         if (logoWrapRef.current) ro.observe(logoWrapRef.current);
         if (iconBoxRef.current) ro.observe(iconBoxRef.current);
 
+
+
         return () => {
             if (rafId != null) cancelAnimationFrame(rafId);
             window.removeEventListener('resize', measure);
@@ -91,6 +99,8 @@ export default function NavBar() {
             setGlobalAnchor(null);
         };
     }, [setGlobalAnchor]);
+
+
 
 
     const zones =

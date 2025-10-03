@@ -1,142 +1,225 @@
+// components/showcase/premiere/spotlight/overlay/PremiereSpotlightSearchMask.tsx
 'use client';
-import {useEffect, useRef, useState} from 'react';
-import {createPortal} from 'react-dom';
-import {usePathname} from 'next/navigation';
-import * as d3 from 'd3';
+
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import Link from 'next/link';
-import {useSpotlightMaskStore} from '@/states/showcase/premiere/useSpotlightMaskStore';
+import { useLogoAnchorStore } from '@/states/core/useLogoAnchorStore';
 
-export default function PremiereSpotlightSearchMask() {
+type Inset = { top?: number; right?: number; bottom?: number; left?: number };
+type Offset = { x?: number; y?: number };
 
-    const DURATION = 700;
+type Props = {
+  logoSrc?: string;
+  logoTop?: string | number;   // px/rem/number
+  logoLeft?: string | number;  // px/rem/number
+  followNavbar?: boolean;
+  followSize?: number | 'match';
+  anchorInsetPx?: Inset;
+  offsetPx?: Offset;
+  scaleX?: number;
+  scaleY?: number;
+  revealMarginPx?: number;
+  spotlightId?: string; // id of <circle> that drives the spotlight
+  debug?: boolean;
+};
 
-    const pathname = usePathname();
-    const spotlightOn = useSpotlightMaskStore(s => s.enabled);
+const LOGO_Z = 2147483647;
 
-    const logoRef = useRef<HTMLDivElement>(null);
-    const rafRef = useRef<number | null>(null);
-    const [mounted, setMounted] = useState(false);
-    const [visible, setVisible] = useState(false);
+export default function PremiereSpotlightSearchMask({
+  logoSrc = '/assets/core/navbar/logo_growing.svg',
+  logoTop = '6rem',
+  logoLeft = '8rem',
+  followNavbar = true,
+  followSize = 'match',
+  anchorInsetPx,
+  offsetPx,
+  scaleX = 1.05, // image-only scale
+  scaleY = 1.05,
+  revealMarginPx = 150,
+  spotlightId = 'spotlight-tracker',
+  debug = false,
+}: Props) {
+  // 1) All hooks at the top (no early return before any hook)
+  const [hydrated, setHydrated] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
 
-    // Mount flag
-    useEffect(() => {
-        setMounted(true);
-        return () => {
-            setMounted(false);
-        };
-    }, []);
+  // Store selectors (separate = stable for SSR)
+  const anchor = useLogoAnchorStore((s) => s.anchor);
+  const lastAnchor = useLogoAnchorStore((s) => s.lastAnchor);
+  const effective = anchor ?? lastAnchor;
 
-    // Cleanup when spotlight turns off (but the hook still runs)
-    useEffect(() => {
-        if (!spotlightOn) {
-            if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
-            rafRef.current = null;
-            d3.select('#overlay-svg').remove();
-            setVisible(false);
-        }
-    }, [spotlightOn]);
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
-    // RAF loop (guarded)
-    useEffect(() => {
-        if (!mounted || !spotlightOn) return;
+  // Spotlight-driven visibility loop — declared unconditionally
+  useEffect(() => {
+    // run only in browser
+    if (!hydrated) return;
 
-        const loop = () => {
-            const maskEl = document.getElementById('spotlight-tracker') as SVGCircleElement | null;
-            const logoEl = logoRef.current;
+    const loop = () => {
+      const tracker = document.getElementById(spotlightId) as SVGCircleElement | null;
+      const boxEl = containerRef.current;
 
-            if (!logoEl || !maskEl) {
-                setVisible(false);
-            } else {
-                const r = parseFloat(maskEl.getAttribute('r') || '0');
-                const cx = parseFloat(maskEl.getAttribute('cx') || '0');
-                const cy = parseFloat(maskEl.getAttribute('cy') || '0');
-                const box = logoEl.getBoundingClientRect();
-                const lx = box.left + box.width / 2;
-                const ly = box.top + box.height / 2;
-                const dist = Math.hypot(cx - lx, cy - ly);
-                setVisible(dist > (r + 150));
-            }
-
-            rafRef.current = requestAnimationFrame(loop);
-        };
-
+      if (!tracker || !boxEl) {
+        // If there is no spotlight, choose your default:
+        setVisible(true); // or false, depending on UX
         rafRef.current = requestAnimationFrame(loop);
-        return () => {
-            if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
-            rafRef.current = null;
-        };
-    }, [mounted, spotlightOn]);
+        return;
+      }
 
-    const handleClick = () => {
-        if (pathname === '/') return;
-        const el = logoRef.current;
-        if (!el) return;
+      const r = parseFloat(tracker.getAttribute('r') || '0');
+      const cx = parseFloat(tracker.getAttribute('cx') || '0');
+      const cy = parseFloat(tracker.getAttribute('cy') || '0');
 
-        const box = el.getBoundingClientRect();
-        const cx = box.left + box.width / 2;
-        const cy = box.top + box.height / 2;
+      const rect = boxEl.getBoundingClientRect();
+      const lx = rect.left + rect.width / 2;
+      const ly = rect.top + rect.height / 2;
 
-        d3.select('#overlay-svg').remove();
+      const dist = Math.hypot(cx - lx, cy - ly);
+      setVisible(dist > r + (revealMarginPx ?? 150));
 
-        const svg = d3.select('body')
-            .append('svg')
-            .attr('id', 'overlay-svg')
-            .style('position', 'fixed')
-            .style('top', 0)
-            .style('left', 0)
-            .style('width', '100vw')
-            .style('height', '100vh')
-            .style('pointer-events', 'none')
-            .style('z-index', '7777');
-
-
-        svg.append('rect')
-
-            .attr('x', cx - 256)
-            .attr('y', cy - 72)
-            .attr('width', 1024)
-            .attr('height', 164)
-            .attr('fill', '#201e1f')
-            .attr('opacity', 1)
-
-
-            .transition()
-            .duration(DURATION)
-            .ease(d3.easeCubicOut)
-            .attr('opacity', 0);
-
-        setTimeout(() => d3.select('#overlay-svg').remove(), DURATION + 40);
+      rafRef.current = requestAnimationFrame(loop);
     };
 
+    rafRef.current = requestAnimationFrame(loop);
+    return () => {
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    };
+  }, [hydrated, spotlightId, revealMarginPx]);
 
-    if (!mounted || !spotlightOn) return null;
+  // 2) Everything below can calculate safely for SSR
+  const inset = {
+    top: anchorInsetPx?.top ?? 0,
+    right: anchorInsetPx?.right ?? 0,
+    bottom: anchorInsetPx?.bottom ?? 0,
+    left: anchorInsetPx?.left ?? 0,
+  };
+  const offset = { x: offsetPx?.x ?? 0, y: offsetPx?.y ?? 0 };
 
-    return createPortal(
-        <div
-            ref={logoRef}
-            style={{
-                position: 'fixed',
-                top: '6rem',
-                left: '8rem',
-                zIndex: 9999,
-                pointerEvents: visible ? 'auto' : 'none',
-                opacity: visible ? 1 : 0,
-            }}
-        >
-            <Link href="/" onClick={handleClick}>
-                <Image
-                    tabIndex={-1}
-                    className="select-none focus:outline-none cursor-pointer"
-                    src='/assets/core/navbar/logo_growing.svg'
-                    alt="Home"
-                    width={100}
-                    height={100}
-                    style={{width: 100, height: 100}}
-                    priority
-                />
-            </Link>
-        </div>,
-        document.body
-    );
+  const snap = (v: number) => {
+    // don’t rely on window here
+    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+    return Math.round(v * dpr) / dpr;
+  };
+  const safe = (n: unknown) => (Number.isFinite(n as number) ? (n as number) : 0);
+
+  const remToPx = (v: string) => {
+    const m = v.match(/^([\d.]+)rem$/);
+    if (!m) return NaN;
+    const root =
+      typeof window !== 'undefined'
+        ? parseFloat(getComputedStyle(document.documentElement).fontSize || '16')
+        : 16;
+    return parseFloat(m[1]) * root;
+  };
+  const toPx = (v: string | number) =>
+    typeof v === 'number'
+      ? v
+      : v.endsWith('px')
+      ? parseFloat(v)
+      : v.endsWith('rem')
+      ? remToPx(v)
+      : NaN;
+
+  // Compute the box from anchor or fallback
+  const e = effective as { left?: number; top?: number; width?: number; height?: number } | null;
+  const hasLT = !!e && Number.isFinite(e.left) && Number.isFinite(e.top);
+  const hasWH =
+    !!e && Number.isFinite(e.width) && Number.isFinite(e.height) && e!.width! > 0 && e!.height! > 0;
+
+  const canFollowPos = followNavbar && hasLT;
+  const canMatchSize = hasWH && followSize === 'match';
+
+  let leftPx: number, topPx: number, widthPx: number, heightPx: number;
+
+  if (canFollowPos) {
+    leftPx = snap(safe(e!.left) + safe(inset.left) + safe(offset.x));
+    topPx = snap(safe(e!.top) + safe(inset.top) + safe(offset.y));
+
+    if (canMatchSize) {
+      const baseW = Math.max(0, safe(e!.width) - safe(inset.left) - safe(inset.right));
+      const baseH = Math.max(0, safe(e!.height) - safe(inset.top) - safe(inset.bottom));
+      widthPx = snap(Math.max(1, baseW)); // container is NOT scaled
+      heightPx = snap(Math.max(1, baseH));
+    } else {
+      const forced = Number(followSize) || 150;
+      widthPx = snap(forced);
+      heightPx = snap(forced);
+    }
+  } else {
+    const l0 = toPx(logoLeft);
+    const t0 = toPx(logoTop);
+    const leftBase = Number.isFinite(l0) ? (l0 as number) : 24;
+    const topBase = Number.isFinite(t0) ? (t0 as number) : 24;
+
+    leftPx = snap(leftBase + safe(offset.x));
+    topPx = snap(topBase + safe(offset.y));
+
+    const forced = Number(followSize) || 150;
+    widthPx = snap(forced);
+    heightPx = snap(forced);
+  }
+
+  if (debug && typeof window !== 'undefined') {
+    // eslint-disable-next-line no-console
+    console.debug('[SpotlightMask]', {
+      anchor,
+      lastAnchor,
+      effective,
+      box: { leftPx, topPx, widthPx, heightPx },
+      visible,
+    });
+  }
+
+  // 3) Now it’s safe to gate the render by hydration (after ALL hooks)
+  if (!hydrated) return null;
+
+  return createPortal(
+    <div
+      ref={containerRef}
+      style={{
+        position: 'fixed',
+        top: `${topPx}px`,
+        left: `${leftPx}px`,
+        width: `${widthPx}px`,
+        height: `${heightPx}px`,
+        zIndex: LOGO_Z,
+        pointerEvents: visible ? 'auto' : 'none',
+        overflow: 'hidden',
+        opacity: visible ? 1 : 0,
+        transition: 'opacity 80ms linear',
+        outline: debug ? '2px solid lime' : 'none',
+        background: debug ? 'rgba(0,255,0,0.06)' : 'transparent',
+      }}
+      aria-hidden={!visible}
+      aria-label="Floating navbar logo"
+    >
+      {/* parent for <Image fill> must be positioned */}
+      <Link href="/" aria-label="Go home" className="relative block w-full h-full">
+        <Image
+          src={logoSrc}
+          alt=""
+          draggable={false}
+          fill
+          className="object-bottom"
+          style={{
+            transform: `scale(${Number.isFinite(scaleX) ? scaleX : 1}, ${
+              Number.isFinite(scaleY) ? scaleY : 1
+            })`,
+            transformOrigin: 'center bottom',
+            userSelect: 'none',
+          }}
+          priority
+          sizes="(max-width: 9999px) 100vw"
+        />
+      </Link>
+    </div>,
+    document.body
+  );
 }
