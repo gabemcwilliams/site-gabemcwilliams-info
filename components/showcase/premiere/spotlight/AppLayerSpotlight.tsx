@@ -209,26 +209,30 @@ function Spotlight(
             .style('position', 'fixed')
             .style('top', '0')
             .style('left', '0')
-            .style('z-index', '0');
+            .style('z-index', '0')
+            .style('touch-action', 'none');                  // <-- prevent browser gestures
 
         const defs = svg.append('defs');
 
-        const fBlack = defs.append('filter').attr('id', 'alphaToBlack').attr('color-interpolation-filters', 'sRGB');
+        const fBlack = defs
+            .append('filter')
+            .attr('id', 'alphaToBlack')
+            .attr('color-interpolation-filters', 'sRGB');
 
-        fBlack.append('feComponentTransfer').attr('in', 'SourceAlpha').append('feFuncA').attr('type', 'table').attr('tableValues', '0 1');
+        fBlack.append('feComponentTransfer')
+            .attr('in', 'SourceAlpha')
+            .append('feFuncA')
+            .attr('type', 'table')
+            .attr('tableValues', '0 1');
 
-        fBlack
-            .append('feColorMatrix')
+        fBlack.append('feColorMatrix')
             .attr('type', 'matrix')
-            .attr(
-                'values',
-                `
-        0 0 0 0 0
-        0 0 0 0 0
-        0 0 0 0 0
-        0 0 0 1 0
-      `
-            );
+            .attr('values', `
+      0 0 0 0 0
+      0 0 0 0 0
+      0 0 0 0 0
+      0 0 0 1 0
+    `);
 
         const mask = defs
             .append('mask')
@@ -236,9 +240,11 @@ function Spotlight(
             .attr('maskUnits', 'userSpaceOnUse')
             .attr('maskContentUnits', 'userSpaceOnUse');
 
-        mask.append('rect').attr('width', width).attr('height', height).attr('fill', 'white');
+        mask.append('rect')
+            .attr('width', width)
+            .attr('height', height)
+            .attr('fill', 'white');
 
-        // Seed from one-shot values (no live subscription)
         const circle = mask
             .append('circle')
             .attr('id', 'spotlight-tracker')
@@ -249,86 +255,112 @@ function Spotlight(
 
         trackerNodeRef.current = circle.node() as SVGCircleElement | null;
 
-        svg
-            .append('rect')
+        svg.append('rect')
             .attr('width', width)
             .attr('height', height)
             .attr('fill', '#201e1f')
-            .attr('fill-opacity', DEBUG_FORCE_ON ? 0.85 : overlayVisible) // ensure visible while debugging
+            .attr('fill-opacity', DEBUG_FORCE_ON ? 0.85 : overlayVisible)
             .attr('mask', 'url(#spotlight-mask)')
             .attr('pointer-events', 'none');
 
-        const dragTarget = svg
-            .append('circle')
+        const dragTarget = svg.append('circle')
             .attr('id', 'drag-target')
             .attr('cx', cx0)
             .attr('cy', cy0)
             .attr('r', r0)
             .attr('fill', 'transparent')
             .style('cursor', 'grab')
-            .style('pointer-events', 'all');
+            .style('pointer-events', 'all')
+            .style('touch-action', 'none');                 // <-- prevent scroll during drag
 
         const dragTargetNode = dragTarget.node();
         dragTargetNodeRef.current = dragTargetNode as SVGCircleElement | null;
 
-        const handleMouseDown = (e: MouseEvent) => {
+        const handlePointerDown = (e: PointerEvent) => {
             if (overlayVisible <= 0) return;
             if (freezeUntilUpRef.current) {
                 e.preventDefault();
                 return;
             }
+
+            e.preventDefault();                             // <-- allow capture & stop native gestures
+            dragTargetNode?.setPointerCapture(e.pointerId); // <-- capture to the target
+
             isDraggingRef.current = true;
             if (dragTargetNodeRef.current) dragTargetNodeRef.current.style.cursor = 'grabbing';
         };
 
-        const handleMouseUp = () => {
+        const handlePointerUp = (e: PointerEvent) => {
             isDraggingRef.current = false;
             if (dragTargetNodeRef.current) dragTargetNodeRef.current.style.cursor = 'grab';
+            try {
+                dragTargetNode?.releasePointerCapture(e.pointerId);
+            } catch {
+            }
         };
 
-        const handleMouseMove = (event: MouseEvent) => {
+        const handlePointerCancel = handlePointerUp;
+
+        const handlePointerMove = (e: PointerEvent) => {
             if (freezeUntilUpRef.current) {
-                event.preventDefault();
+                e.preventDefault();
                 return;
             }
             if (!isDraggingRef.current || overlayVisible <= 0) return;
 
             const rect = svgEl.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
             circle.attr('cx', x).attr('cy', y);
             dragTarget.attr('cx', x).attr('cy', y);
-
-            // Intentionally NOT writing back to the store (one-shot init only)
         };
 
         onMaskReady?.();
 
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-        if (dragTargetNode) dragTargetNode.addEventListener('mousedown', handleMouseDown);
+        // IMPORTANT: attach to the capturing element (and SVG as fallback), not document
+        dragTargetNode?.addEventListener('pointerdown', handlePointerDown, {passive: false});
+        dragTargetNode?.addEventListener('pointermove', handlePointerMove);   // delivered via capture
+        dragTargetNode?.addEventListener('pointerup', handlePointerUp);
+        dragTargetNode?.addEventListener('pointercancel', handlePointerCancel);
+
+        // Fallback if something slips past capture (desktop edge-cases)
+        svgEl.addEventListener('pointermove', handlePointerMove);
+        svgEl.addEventListener('pointerup', handlePointerUp);
+        svgEl.addEventListener('pointercancel', handlePointerCancel);
 
         setMaskReady(true);
 
         return () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-            if (dragTargetNode) dragTargetNode.removeEventListener('mousedown', handleMouseDown);
+            dragTargetNode?.removeEventListener('pointerdown', handlePointerDown);
+            dragTargetNode?.removeEventListener('pointermove', handlePointerMove);
+            dragTargetNode?.removeEventListener('pointerup', handlePointerUp);
+            dragTargetNode?.removeEventListener('pointercancel', handlePointerCancel);
+
+            svgEl.removeEventListener('pointermove', handlePointerMove);
+            svgEl.removeEventListener('pointerup', handlePointerUp);
+            svgEl.removeEventListener('pointercancel', handlePointerCancel);
+
             d3.select(svgEl).selectAll('*').remove();
         };
     }
+
 
     useEffect(maskSetupEffect, []); // build once from seed
 
     // =========================
     // Mouse Move → Proximity Highlight (hover preview)
     // =========================
-    function mouseMoveHintEffect() {
+    function pointerMoveHintEffect() {
         if (!enabled) return;
 
-        const handleMove = (e: MouseEvent) => {
+        // Keep hover preview for *pointer* only. Touch users won’t see flickery “hover”.
+        const handleMove = (e: PointerEvent) => {
+            if (e.pointerType !== 'pointer') return; // ignore touch/pen for hover hint
             if (fadingOutRef.current || stopInteractivityRef.current) return;
-            const {clientX: x, clientY: y} = e;
+
+            const x = e.clientX;
+            const y = e.clientY;
 
             const points = getZPoints();
             if (!points.length) return;
@@ -356,12 +388,7 @@ function Spotlight(
 
             const HINT_MAX = 0.005;
             const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
-
-            function setHint(v: number) {
-                setOverlayVisible(clamp01(Math.min(v, HINT_MAX)));
-            }
-
-            setHint(val);
+            setOverlayVisible(clamp01(Math.min(val, HINT_MAX)));
 
             if (closestIndex !== null && minDist < HOVER_THRESHOLD) {
                 showPoiHole(points[closestIndex]);
@@ -370,65 +397,74 @@ function Spotlight(
             }
         };
 
-        window.addEventListener('mousemove', handleMove);
-        return () => window.removeEventListener('mousemove', handleMove);
+        window.addEventListener('pointermove', handleMove, {passive: true});
+        return () => window.removeEventListener('pointermove', handleMove);
     }
 
-    useEffect(mouseMoveHintEffect, []); // keep original deps
+
+    useEffect(pointerMoveHintEffect, []); // keep original deps
 
     // =========================
     // Drag Reveal Logic (promote to persistent)
     // =========================
     function dragRevealEffect() {
         if (!enabled) return;
+        let rafId = 0;
 
-        const handleRevealCheck = () => {
-            if (fadingOutRef.current || stopInteractivityRef.current) return;
+        const tick = () => {
+            if (!enabled) return; // guard in case it flips mid-drag
+            if (fadingOutRef.current || stopInteractivityRef.current) {
+                rafId = requestAnimationFrame(tick);
+                return;
+            }
+
             const node = trackerNodeRef.current;
-            if (!node) return;
+            if (!node) {
+                rafId = requestAnimationFrame(tick);
+                return;
+            }
 
             if (!isDraggingRef.current) {
                 clearPoiHole();
+                rafId = requestAnimationFrame(tick);
                 return;
             }
 
             const sx = node.cx.baseVal.value;
             const sy = node.cy.baseVal.value;
-
             const points = getZPoints();
-            if (!points.length) return;
+            if (points.length) {
+                let minDist = Infinity;
+                let closestIndex: number | null = null;
+                for (let i = 0; i < points.length; i++) {
+                    const p = points[i];
+                    const d = Math.hypot(sx - p.x, sy - p.y);
+                    if (d < minDist) {
+                        minDist = d;
+                        closestIndex = i;
+                    }
+                }
 
-            let minDist = Infinity;
-            let closestIndex: number | null = null;
-            for (let i = 0; i < points.length; i++) {
-                const p = points[i];
-                const d = Math.hypot(sx - p.x, sy - p.y);
-                if (d < minDist) {
-                    minDist = d;
-                    closestIndex = i;
+                if (closestIndex !== null && minDist < HOVER_THRESHOLD) {
+                    const hit = points[closestIndex];
+                    usePOIRevealStore.setState((s) => ({
+                        items: {
+                            ...s.items,
+                            [hit.name]: {...s.items[hit.name], visible: true},
+                        },
+                    }));
+                } else {
+                    clearPoiHole();
                 }
             }
 
-            if (closestIndex !== null && minDist < HOVER_THRESHOLD) {
-                const hit = points[closestIndex];
-
-                usePOIRevealStore.setState((s) => ({
-                    items: {
-                        ...s.items,
-                        [hit.name]: {
-                            ...s.items[hit.name],
-                            visible: true,
-                        },
-                    },
-                }));
-            } else {
-                clearPoiHole();
-            }
+            rafId = requestAnimationFrame(tick);
         };
 
-        window.addEventListener('mousemove', handleRevealCheck);
-        return () => window.removeEventListener('mousemove', handleRevealCheck);
+        rafId = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(rafId);
     }
+
 
     useEffect(dragRevealEffect, []); // keep original deps
 
@@ -518,7 +554,7 @@ function Spotlight(
                 document.body.classList.remove('no-select');
             };
 
-            window.addEventListener('mouseup', release, {once: true});
+            window.addEventListener('pointerup', release, {once: true});
             window.addEventListener('pointerup', release, {once: true});
         }, FINISH_DELAY_MS);
 

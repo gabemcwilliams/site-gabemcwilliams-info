@@ -32,16 +32,23 @@ const VARIANTS: readonly string[] = [
   '/assets/showcase/premiere/children/children_sitting_5.svg',
 ] as const;
 
-const BP_SMALL = 600;
-const BP_LARGE = 1980;
+// Big-two tiers
+const BP_XL  = 1280;
+const BP_2XL = 1536;
 
 /* =========================
    Helpers (pure)
    ========================= */
 function computeBaseHeight(vw: number): string {
-  if (vw < BP_SMALL) return 'min(18vh, 32vw)';
-  if (vw <= BP_LARGE) return 'min(32vh, 28vw)';
-  return 'min(35vh, 20vw)';
+  if (vw < BP_XL) return 'min(18vh, 32vw)';   // < 1280
+  if (vw < BP_2XL) return 'min(32vh, 28vw)';  // 1280–1535
+  return 'min(35vh, 20vw)';                    // ≥ 1536
+}
+
+function computeAudienceOffset(vw: number): string {
+  if (vw < BP_XL) return '15vh';   // < 1280 → modest lift
+  if (vw < BP_2XL) return '4vh';  // 1280–1535
+  return '-2vh';                   // ≥ 1536 → lift more on big screens
 }
 
 /* =========================
@@ -54,50 +61,35 @@ function Audience({
   minSwapMs = 700,
   maxSwapMs = 1900,
 }: AudienceProps) {
-  /* -------------------------
-     Viewport → responsive size
-     ------------------------- */
+  // Viewport → responsive size/offset
   const [vw, setVw] = useState<number>(1280);
-
-  function viewportResizeEffect() {
+  useEffect(() => {
     const onResize = () => setVw(window.innerWidth);
     setVw(window.innerWidth);
     window.addEventListener('resize', onResize, { passive: true });
     return () => window.removeEventListener('resize', onResize);
-  }
-  useEffect(viewportResizeEffect, []);
+  }, []);
 
-  const baseHeight = useMemo(() => computeBaseHeight(vw), [vw]);
+  const baseHeight   = useMemo(() => computeBaseHeight(vw),   [vw]);
+  const bottomOffset = useMemo(() => computeAudienceOffset(vw), [vw]);
 
-  /* -------------------------
-     Reduced motion
-     ------------------------- */
+  // Reduced motion
   const prefersReduced = useRef(false);
-
-  function reducedMotionEffect() {
+  useEffect(() => {
     const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
     prefersReduced.current = !!mq?.matches;
-    const onChange = (e: MediaQueryListEvent) => {
-      prefersReduced.current = e.matches;
-    };
+    const onChange = (e: MediaQueryListEvent) => { prefersReduced.current = e.matches; };
     mq?.addEventListener?.('change', onChange);
     return () => mq?.removeEventListener?.('change', onChange);
-  }
-  useEffect(reducedMotionEffect, []);
+  }, []);
 
-  /* -------------------------
-     Double-buffer crossfade
-     ------------------------- */
+  // Double-buffer crossfade
   const [frontIdx, setFrontIdx] = useState(0);
   const [imgs, setImgs] = useState<[string, string]>([VARIANTS[0], VARIANTS[0]]);
   const frontIdxRef = useRef(frontIdx);
+  useEffect(() => { frontIdxRef.current = frontIdx; }, [frontIdx]);
 
-  function syncFrontIdxRefEffect() {
-    frontIdxRef.current = frontIdx;
-  }
-  useEffect(syncFrontIdxRefEffect, [frontIdx]);
-
-  function swapLoopEffect() {
+  useEffect(() => {
     if (!visible || VARIANTS.length === 0) return;
     let timer: ReturnType<typeof setTimeout>;
 
@@ -106,7 +98,6 @@ function Audience({
         timer = setTimeout(loop, 4000);
         return;
       }
-
       const next = Math.floor(Math.random() * VARIANTS.length);
       const back = 1 - frontIdxRef.current;
 
@@ -124,14 +115,11 @@ function Audience({
 
     loop();
     return () => clearTimeout(timer);
-  }
-  useEffect(swapLoopEffect, [visible, minSwapMs, maxSwapMs]);
+  }, [visible, minSwapMs, maxSwapMs]);
 
   if (!visible) return null;
 
-  /* =========================
-     Styles
-     ========================= */
+  // Styles
   const commonImgStyle: CSSProperties = useMemo(() => {
     const t = zoom ? 'translateY(3vh) scale(0.98)' : 'translateY(0) scale(1)';
     return {
@@ -151,9 +139,7 @@ function Audience({
     } as const;
   }, [zoom]);
 
-  /* -------------------------
-     Zustand publishing
-     ------------------------- */
+  // Zustand publishing
   const img0Ref = useRef<HTMLImageElement | null>(null);
   const img1Ref = useRef<HTMLImageElement | null>(null);
 
@@ -179,36 +165,27 @@ function Audience({
     }));
   }
 
-  function onImgLoad() {
-    requestAnimationFrame(measure);
-  }
+  const onImgLoad = () => requestAnimationFrame(measure);
+  useEffect(() => { requestAnimationFrame(measure); }, [frontIdx, baseHeight, bottomOffset, zoom]);
 
-  function measureOnDepsEffect() {
-    requestAnimationFrame(measure);
-  }
-  useEffect(measureOnDepsEffect, [frontIdx, baseHeight, zoom]);
-
-  function measureOnWindowResizeEffect() {
+  useEffect(() => {
     const onResize = () => requestAnimationFrame(measure);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }
-  useEffect(measureOnWindowResizeEffect, []);
+  }, []);
 
-  function resizeObserverEffect() {
+  useEffect(() => {
     const el = frontIdx === 0 ? img0Ref.current : img1Ref.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(() => measure());
     ro.observe(el);
     return () => ro.disconnect();
-  }
-  useEffect(resizeObserverEffect, [frontIdx]);
+  }, [frontIdx]);
 
   /* =========================
      Render
      ========================= */
   return (
-    // Outer layer stays full-viewport for stacking/measure
     <div
       aria-hidden="true"
       style={{
@@ -220,19 +197,17 @@ function Audience({
         contain: 'layout paint',
       }}
     >
-      {/* Centered, sized inner wrapper */}
       <div
         style={{
           position: 'absolute',
-          bottom: 0,
+          bottom: bottomOffset,            // ⬅ viewport-responsive lift
           left: '50%',
           transform: 'translateX(-50%)',
-          width: 'clamp(480px, 60vw, 1200px)', // width rule per your snippet
-          height: baseHeight,                   // height derived from viewport
+          width: 'clamp(480px, 60vw, 1200px)',
+          height: baseHeight,
           pointerEvents: 'none',
         }}
       >
-        {/* Buffer 0 */}
         <img
           ref={img0Ref}
           src={imgs[0]}
@@ -244,8 +219,6 @@ function Audience({
           onLoad={onImgLoad}
           style={{ ...commonImgStyle, opacity: frontIdx === 0 ? 1 : 0 }}
         />
-
-        {/* Buffer 1 */}
         <img
           ref={img1Ref}
           src={imgs[1]}

@@ -1,5 +1,5 @@
 // /app/(main)/layout.tsx
-import Navbar from "@/components/core/Navbar";
+import Navbar from "@/components/core/navbar/Navbar";
 import Footer from "@/components/core/Footer";
 
 import LandingPageCollapsingMask from "@/components/core/landing/LandingPageCollapsingMask";
