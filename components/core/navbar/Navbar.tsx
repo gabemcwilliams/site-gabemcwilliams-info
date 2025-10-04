@@ -101,8 +101,6 @@ export default function NavBar() {
     }, [setGlobalAnchor]);
 
 
-
-
     const zones =
         isHome && hoverEnabled && anchor
             ? createPortal(

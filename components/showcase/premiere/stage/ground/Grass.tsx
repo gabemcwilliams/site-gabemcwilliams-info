@@ -2,7 +2,7 @@
 
 import React, {memo, useMemo, useEffect, useState} from 'react';
 import {computeGroundDepth} from '@/components/utils/computeGroundDepth';
-import {useStageGroundSizeClass} from '@/hooks/useStageGroundSizeClass';
+import {useStageGroundSizeClass} from '@/hooks/showcase/premiere/stage/useStageGroundSizeClass';
 
 export interface GrassProps {
     visible?: boolean;
@@ -187,7 +187,7 @@ function Grass(
     const centerBlockPct =
         vp === 'mobile' ? 80 :       // wide gap on mobile
             vp === 'desktop' ? 66 :      // balanced gap on desktop
-                30;                          // tighter on ultrawide
+                33;                          // tighter on ultrawide
 
     const plan = useMemo(
         () => buildPlan(layers, centerBlockPct, edgeGutterPct),

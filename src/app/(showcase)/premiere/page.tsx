@@ -2,6 +2,7 @@
 'use client';
 
 import React, {useEffect, useMemo, useRef, useState} from 'react';
+import {useRouter} from "next/navigation";
 import dynamic from 'next/dynamic';
 import AppLayerSpotlight from '@/components/showcase/premiere/spotlight/AppLayerSpotlight';
 import {useSpotlightMaskStore} from '@/states/showcase/premiere/useSpotlightMaskStore';
@@ -102,11 +103,22 @@ const AppStageSettingLazy = dynamic(
 );
 
 export default function Premiere() {
+    const router = useRouter(); // ✅ ADD THIS first
+
+    // ✅ WIDTH GATE — runs before anything heavy mounts
+    useEffect(() => {
+        const MIN_WIDTH = 1024;                 // set your threshold here
+        if (window.innerWidth < MIN_WIDTH) {
+            router.replace('/');                  // bounce home if too small
+        }
+    }, [router]);
+
     const spotlightOn = useSpotlightMaskStore((s) => s.enabled);
 
     // Seed/reset policy
     const initialMask = useInitialPremiereMask();
     useResetGameOnReloadOrDeepLink();
+
 
     // 1) maskReady flips when the masked rect has actually painted
     const [maskReady, setMaskReady] = useState(false);

@@ -2,7 +2,7 @@
 
 import React, {memo, useMemo, useEffect, useState} from 'react';
 import {computeGroundDepth} from '@/components/utils/computeGroundDepth';
-import {useStageGroundSizeClass} from '@/hooks/useStageGroundSizeClass';
+import {useStageGroundSizeClass} from '@/hooks/showcase/premiere/stage/useStageGroundSizeClass';
 
 export interface CactiProps {
     visible?: boolean;
@@ -158,6 +158,7 @@ function buildPlan(
 
       // Subtle per-item Y & scale variation
       const translateY = (posRnd() * 1.6) - 0.8; // ±0.8%
+
       const scale = 0.94 + posRnd() * 0.14;      // 0.94–1.08
 
       return {
@@ -193,9 +194,9 @@ function Cacti(
 
     // responsive middle gutter
     const centerBlockPct =
-        vp === 'mobile' ? 80 : // wide center gap on mobile
+        vp === 'mobile' ? 20 : // wide center gap on mobile
             vp === 'desktop' ? 67 : // balanced gap on desktop
-                31; // tighter on ultrawide
+                35; // tighter on ultrawide
 
     const plan = useMemo(
         () => buildPlan(layers, centerBlockPct, edgeGutterPct),
