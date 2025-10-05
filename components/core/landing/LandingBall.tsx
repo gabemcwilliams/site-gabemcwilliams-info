@@ -1,15 +1,42 @@
 'use client';
 
-import {useRouter} from 'next/navigation';
-import {useWarmPremiereAssets} from "@/hooks/core/landing/useWarmPremiereAssets";
-import {useSpotlightMaskStore} from '@/states/showcase/premiere/useSpotlightMaskStore';
-import {useViewportGate} from '@/states/core/useViewportGate';
 import React, {useEffect, useRef, useState} from 'react';
+import type {JSX} from 'react';
+import {useRouter} from 'next/navigation';
 import * as d3 from 'd3';
+import {useSpotlightMaskStore} from "@/states/showcase/premiere/useSpotlightMaskStore";
+import {useWarmPremiereAssets} from "@/hooks/core/landing/useWarmPremiereAssets";
 
-const MIN_BALL_WIDTH = 1024;
+export type BallSeed = { cx: number; cy: number; r: number };
 
-export default function Home() {
+type Props = {
+
+    widthOK: boolean,
+
+    ballVersion: number
+
+    //   /** Inline element in your H1 used to compute starting cx/cy/r */
+    dotRef: React.RefObject<SVGSVGElement | null>;
+
+    //   /** Inline element in your H1 used to compute starting cx/cy/r */
+    spanRef: React.RefObject<HTMLElement | null>;
+
+    //   /** Main layout container to compute SVG height */
+    mainRef: React.RefObject<HTMLElement | null>;
+};
+
+export default function LandingBall(
+    {
+        widthOK,
+        ballVersion,
+
+        dotRef,
+        spanRef,
+        mainRef,
+
+    }: Props): JSX.Element | null {
+
+
     // ---------------------------------------------------------
     // Constants
     // ---------------------------------------------------------
@@ -17,6 +44,8 @@ export default function Home() {
     const FINAL_RADIUS = 100;
     const MASK_SHRINK_PX = 2;
     const maskColor = '#201e1f';
+
+    const MIN_BALL_WIDTH = 1024;
 
     // Fallbacks if we can’t compute from DOM
     const cxFallback = 1546.2;
@@ -28,48 +57,29 @@ export default function Home() {
     // ---------------------------------------------------------
     const router = useRouter();
 
-    const dotRef = useRef<SVGSVGElement | null>(null);           // Page SVG (ball)
-    const spanRef = useRef<HTMLSpanElement | null>(null);        // Anchor for initial ball position
-    const mainRef = useRef<HTMLElement | null>(null);            // Layout container
 
-    const maskSvgRef = useRef<SVGSVGElement | null>(null);       // Global overlay SVG (#global-mask-svg)
-    const spotlightRef = useRef<SVGCircleElement | null>(null);  // Global hole circle (#spotlight-tracker)
-    const maskRectRef = useRef<SVGRectElement | null>(null);     // Global overlay rect
-    const bgCircleRef = useRef<SVGCircleElement | null>(null);   // Gradient circle behind the ball (page SVG)
+    const maskSvgRef = useRef<SVGSVGElement | null>(null);
+    const spotlightRef = useRef<SVGCircleElement | null>(null);
+    const maskRectRef = useRef<SVGRectElement | null>(null);
+    const bgCircleRef = useRef<SVGCircleElement | null>(null);
+
 
     const hitboxCenterRef = useRef<{ cx: number; cy: number } | null>(null);
     const hasStartedRef = useRef(false);
 
     const [ballPosition, setBallPosition] = useState<{ x: number; y: number } | null>(null);
     const [hydrated, setHydrated] = useState(false);
+
     useEffect(() => {
         setHydrated(true);
     }, []);
-
-    // ---------------------------------------------------------
-    // Width threshold (SSR-safe)
-    // ---------------------------------------------------------
-    const [vw, setVw] = useState(0);
-    const setWidthOK = useViewportGate((s) => s.setWidthOK);
-
-    useEffect(() => {
-        const update = () => {
-            const w = window.innerWidth;
-            setVw(w);                    // local use (ball)
-            setWidthOK(w >= MIN_BALL_WIDTH);  // publish to store for Premiere
-        };
-        update();
-        window.addEventListener('resize', update, {passive: true});
-        return () => window.removeEventListener('resize', update);
-    }, [setWidthOK]);
-
-    const widthOK = useViewportGate((s) => s.widthOK);
 
 
     // ---------------------------------------------------------
     // Assets prefect hook
     // ---------------------------------------------------------
     useWarmPremiereAssets('/api/v1/premiere-manifest') // warms manifest + prefetches /premiere
+
 
     // ---------------------------------------------------------
     // Spotlight handlers
@@ -173,6 +183,7 @@ export default function Home() {
             });
     };
 
+
     // ---------------------------------------------------------
     // Main animation effect (returns cleanup)
     // ---------------------------------------------------------
@@ -182,13 +193,11 @@ export default function Home() {
 
         tOuter = setTimeout(() => {
             const svgEl = dotRef.current;
+
+
             const svgElMask = document.querySelector('#global-mask-svg') as SVGSVGElement | null;
             maskSvgRef.current = svgElMask || null;
 
-            if (!svgEl || !svgElMask) {
-                console.warn('SVG elements not ready yet');
-                return;
-            }
 
             const spanEl = spanRef.current;
             const mainEl = mainRef.current;
@@ -201,6 +210,10 @@ export default function Home() {
 
             // Page SVG
             const svg = d3.select(svgEl);
+
+            // nuke anything from the previous run
+            svg.selectAll('*').interrupt();
+            svg.selectAll('*').remove();
 
             // Ensure a <defs> section exists on the page SVG
             let defsLocal = svg.select<SVGDefsElement>('defs');
@@ -235,9 +248,11 @@ export default function Home() {
 
             // Size the page SVG
             const extraPadding = FINAL_RADIUS * 3;
+
+            const containerRect = mainEl.getBoundingClientRect();
             svg
-                .attr('width', window.innerWidth)
-                .attr('height', `${mainEl.getBoundingClientRect().height + extraPadding}px`)
+                .attr('width', containerRect.width)
+                .attr('height', containerRect.height + extraPadding)
                 .style('overflow', 'visible');
 
             // Geometry
@@ -255,6 +270,7 @@ export default function Home() {
 
             const radiusDiff = finalRadius - radius;
             const expandedRadius = radius * STRETCH_MULTIPLIER;
+
 
             // -----------------------------------------------------
             // Global mask setup
@@ -320,6 +336,7 @@ export default function Home() {
                     .attr('mask', 'url(#shrink-mask)');
             }
 
+
             // -----------------------------------------------------
             // Ball draw
             // -----------------------------------------------------
@@ -332,6 +349,7 @@ export default function Home() {
                 .attr('cy', cyStart)
                 .attr('r', radius)
                 .style('fill', '#000');
+
 
             // -----------------------------------------------------
             // Animation
@@ -475,17 +493,21 @@ export default function Home() {
             }, 30);
         }, 30);
 
+
         // Cleanup
         return () => {
             if (tOuter) clearTimeout(tOuter);
             if (tInner) clearTimeout(tInner);
+
             // stop any in-flight transitions on this page SVG
             if (dotRef.current) d3.select(dotRef.current).selectAll('*').interrupt();
+
             // remove transient overlay rect & bg circle
             if (maskRectRef.current) {
                 d3.select(maskRectRef.current).remove();
                 maskRectRef.current = null;
             }
+
             if (bgCircleRef.current) {
                 d3.select(bgCircleRef.current).remove();
                 bgCircleRef.current = null;
@@ -496,61 +518,41 @@ export default function Home() {
     // ---------------------------------------------------------
     // Start animation only at ≥ 1024, once
     // ---------------------------------------------------------
+    // useEffect(() => {
+    //     if (!widthOK || hasStartedRef.current) return;
+    //     hasStartedRef.current = true;
+    //     const cleanup = landingAnimationEffect();
+    //     return cleanup;
+    // }, [widthOK, ballVersion]);
+
     useEffect(() => {
-        if (!widthOK || hasStartedRef.current) return;
+        if (!widthOK) {
+            hasStartedRef.current = false;     // gate closed → allow future restart
+            return;
+        }
+
+        if (hasStartedRef.current) return;
         hasStartedRef.current = true;
+
         const cleanup = landingAnimationEffect();
-        return cleanup;
-    }, [widthOK]);
+        return () => {
+            cleanup?.();
+            hasStartedRef.current = false;     // allow restart on next change
+        };
+    }, [widthOK, ballVersion]);
 
     // ---------------------------------------------------------
     // Render
     // ---------------------------------------------------------
     return (
         <>
-            <main
-                ref={mainRef}
-                style={{zIndex: 500, height: '33vh'}}
-                className="flex-grow min-h-0 h-full bg-[var(--background)] text-[var(--TEXT_PRIMARY)] flex justify-start px-[8rem] pt-[6rem] relative"
-            >
-                <div className="max-w-screen-md relative">
-                    <h1 className="text-[4rem] font-bold leading-tight">
-                        Experiment
+            {/* Only mount the SVG when eligible (your gate) */}
 
-                        {/* Visible dot on < lg (no JS needed) */}
-                        <span
-                            aria-hidden="true"
-                            className="inline lg:hidden  align-baseline font-bold"
-                        >
-                            .
-                          </span>
+            <svg ref={dotRef} style={{position: 'absolute', top: 0, left: 0, zIndex: 10}}/>
 
-                        {/* Invisible geometry shim on ≥ lg */}
-                        <span
-                            ref={spanRef}
-                            aria-hidden="true"
-                            className="hidden lg:inline-block w-[0.5ch] h-[1em] align-baseline
-               text-transparent translate-y-[0.47em] select-none "
-                        >
-                        .
-                      </span>
 
-                        <br/>
-                        Build.<br/>
-                        Predict.
-                    </h1>
-
-                    {/* Only mount the SVG when eligible (your gate) */}
-                    {widthOK && (
-                        <svg ref={dotRef} style={{position: 'absolute', top: 0, left: 0, zIndex: 10}}/>
-                    )}
-                </div>
-
-                {/* Only mount the SVG when eligible to avoid stray handlers/masks */}
-                {widthOK && (
-                    <svg ref={dotRef} style={{position: 'absolute', top: 0, left: 0, zIndex: 10}}/>
-                )}
-            </main>
         </>
     );
+
+
 }
