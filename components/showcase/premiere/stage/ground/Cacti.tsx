@@ -22,13 +22,13 @@ export type CactusLayer = {
 };
 
 const cactusImages = [
-    '/assets/showcase/premiere/cacti/cactus_1.svg',
-    '/assets/showcase/premiere/cacti/cactus_2.svg',
-    '/assets/showcase/premiere/cacti/cactus_3.svg',
-    '/assets/showcase/premiere/cacti/cactus_4.svg',
-    '/assets/showcase/premiere/cacti/cactus_5.svg',
-    '/assets/showcase/premiere/cacti/cactus_6.svg',
-    '/assets/showcase/premiere/cacti/cactus_7.svg',
+    '/assets/showcase/premiere/stage_setting/cacti/cactus_1.svg',
+    '/assets/showcase/premiere/stage_setting/cacti/cactus_2.svg',
+    '/assets/showcase/premiere/stage_setting/cacti/cactus_3.svg',
+    '/assets/showcase/premiere/stage_setting/cacti/cactus_4.svg',
+    '/assets/showcase/premiere/stage_setting/cacti/cactus_5.svg',
+    '/assets/showcase/premiere/stage_setting/cacti/cactus_6.svg',
+    '/assets/showcase/premiere/stage_setting/cacti/cactus_7.svg',
 ];
 
 export const defaultCactusLayers: CactusLayer[] = [

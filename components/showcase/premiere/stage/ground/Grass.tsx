@@ -21,10 +21,10 @@ export type GrassLayer = {
 };
 
 const grassImages = [
-    '/assets/showcase/premiere/grass/grass_1.webp',
-    '/assets/showcase/premiere/grass/grass_2.webp',
-    '/assets/showcase/premiere/grass/grass_3.webp',
-    '/assets/showcase/premiere/grass/grass_4.webp',
+    '/assets/showcase/premiere/stage_setting/grass/grass_1.webp',
+    '/assets/showcase/premiere/stage_setting/grass/grass_2.webp',
+    '/assets/showcase/premiere/stage_setting/grass/grass_3.webp',
+    '/assets/showcase/premiere/stage_setting/grass/grass_4.webp',
 ];
 
 export const defaultGrassLayers: GrassLayer[] = [

@@ -1,6 +1,7 @@
 'use client';
 
 import {useRouter} from 'next/navigation';
+import {useWarmPremiereAssets} from "@/hooks/core/landing/useWarmPremiereAssets";
 import {useSpotlightMaskStore} from '@/states/showcase/premiere/useSpotlightMaskStore';
 import {useViewportGate} from '@/states/core/useViewportGate';
 import React, {useEffect, useRef, useState} from 'react';
@@ -64,6 +65,11 @@ export default function Home() {
 
     const widthOK = useViewportGate((s) => s.widthOK);
 
+
+    // ---------------------------------------------------------
+    // Assets prefect hook
+    // ---------------------------------------------------------
+    useWarmPremiereAssets('/api/v1/premiere-manifest') // warms manifest + prefetches /premiere
 
     // ---------------------------------------------------------
     // Spotlight handlers

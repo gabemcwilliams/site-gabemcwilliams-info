@@ -35,18 +35,18 @@ export interface CampfireProps {
   publishToStore?: boolean;
 }
 
-const RING_SRC = '/assets/showcase/premiere/campfire/campfire_ring.svg';
+const RING_SRC = '/assets/showcase/premiere/stage_setting/campfire/campfire_ring.svg';
 
 const CORE_FLAMES = [
-  '/assets/showcase/premiere/campfire/flame_1.svg',
-  '/assets/showcase/premiere/campfire/flame_2.svg',
-  '/assets/showcase/premiere/campfire/flame_3.svg',
-  '/assets/showcase/premiere/campfire/flame_4.svg',
+  '/assets/showcase/premiere/stage_setting/campfire/flame_1.svg',
+  '/assets/showcase/premiere/stage_setting/campfire/flame_2.svg',
+  '/assets/showcase/premiere/stage_setting/campfire/flame_3.svg',
+  '/assets/showcase/premiere/stage_setting/campfire/flame_4.svg',
 ] as const;
 
 const ALT_FLAMES = [
-  '/assets/showcase/premiere/campfire/flame_alt_1.svg',
-  '/assets/showcase/premiere/campfire/flame_alt_2.svg',
+  '/assets/showcase/premiere/stage_setting/campfire/flame_alt_1.svg',
+  '/assets/showcase/premiere/stage_setting/campfire/flame_alt_2.svg',
 ] as const;
 
 // Kept only ≥1024 tiers

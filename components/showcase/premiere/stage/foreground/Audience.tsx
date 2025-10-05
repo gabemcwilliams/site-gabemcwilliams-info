@@ -25,11 +25,11 @@ export interface AudienceProps {
    Constants
    ========================= */
 const VARIANTS: readonly string[] = [
-  '/assets/showcase/premiere/children/children_sitting_1.svg',
-  '/assets/showcase/premiere/children/children_sitting_2.svg',
-  '/assets/showcase/premiere/children/children_sitting_3.svg',
-  '/assets/showcase/premiere/children/children_sitting_4.svg',
-  '/assets/showcase/premiere/children/children_sitting_5.svg',
+  '/assets/showcase/premiere/stage_setting/children/children_sitting_1.svg',
+  '/assets/showcase/premiere/stage_setting/children/children_sitting_2.svg',
+  '/assets/showcase/premiere/stage_setting/children/children_sitting_3.svg',
+  '/assets/showcase/premiere/stage_setting/children/children_sitting_4.svg',
+  '/assets/showcase/premiere/stage_setting/children/children_sitting_5.svg',
 ] as const;
 
 // Big-two tiers

@@ -22,9 +22,9 @@ export type RockLayer = {
 };
 
 const rockImages = [
-    '/assets/showcase/premiere/rocks/rock_2.webp',
-    '/assets/showcase/premiere/rocks/rock_3.webp',
-    '/assets/showcase/premiere/rocks/rock_5.webp',
+    '/assets/showcase/premiere/stage_setting/rocks/rock_2.webp',
+    '/assets/showcase/premiere/stage_setting/rocks/rock_3.webp',
+    '/assets/showcase/premiere/stage_setting/rocks/rock_5.webp',
 ];
 
 export const defaultRockLayers: RockLayer[] = [

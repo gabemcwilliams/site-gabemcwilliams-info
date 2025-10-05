@@ -19,9 +19,9 @@ export interface CloudsProps {
 }
 
 const defaultLayers: CloudLayer[] = [
-  { img: '/assets/showcase/premiere/clouds/streams/cloud_stream_far.svg',    loopDurationSec: 260, z: 51, opacity: 1, height: '5vh'  },
-  { img: '/assets/showcase/premiere/clouds/streams/cloud_stream_medium.svg', loopDurationSec:  220, z: 52, opacity: 1, height: '10vh' },
-  { img: '/assets/showcase/premiere/clouds/streams/cloud_stream_near.svg',   loopDurationSec:  120, z: 53, opacity: 1, height: '15vh' },
+  { img: '/assets/showcase/premiere/stage_setting/clouds/streams/cloud_stream_far.svg',    loopDurationSec: 260, z: 51, opacity: 1, height: '5vh'  },
+  { img: '/assets/showcase/premiere/stage_setting/clouds/streams/cloud_stream_medium.svg', loopDurationSec:  220, z: 52, opacity: 1, height: '10vh' },
+  { img: '/assets/showcase/premiere/stage_setting/clouds/streams/cloud_stream_near.svg',   loopDurationSec:  120, z: 53, opacity: 1, height: '15vh' },
 ];
 
 function parseVhToPx(vhString: string) {
