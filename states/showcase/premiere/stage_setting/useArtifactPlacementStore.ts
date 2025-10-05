@@ -24,22 +24,21 @@ export type FrameFinal = {
   transform: string // e.g. 'scale(3.4)' or 'scale(1)'
 }
 
-/** Arch final sizing/position if/when you apply it */
-export type ArchFinal = {
-  width: string
-  height: string
-  transform?: string
-  top?: string
-  left?: string
-}
+/** Stage tracking */
+export type StageSizePx = { width: number; height: number }
+export type StageRectPx = { x: number; y: number; width: number; height: number }
 
 type StageFinalState = {
-  arch?: ArchFinal
+  // --- stage snapshot (update these on mount/resize/zoom frames) ---
+  stageSizePx?: StageSizePx            // inner stage size in px
+  stageRectPx?: StageRectPx            // absolute rect in the page (optional but useful)
+  stageScale?: number                   // width / 2000 (your canonical stage width)
+  zoomScale?: number                    // layout.stage.zoomScale (breakpoint-specific)
+  visualZoomOn?: boolean                // whether zoom visuals are active
+
+  // --- finals written by Stage after computing layout ---
   emblem?: EmblemFinal
-  curtains: {
-    left?: CurtainFinal
-    right?: CurtainFinal
-  }
+  curtains: { left?: CurtainFinal; right?: CurtainFinal }
   frame?: FrameFinal
 
   // debug flag
@@ -47,7 +46,23 @@ type StageFinalState = {
 }
 
 type Actions = {
-  setArch: (v: ArchFinal) => void
+  // stage setters
+  setStageSize: (v: StageSizePx) => void
+  setStageRect: (v: StageRectPx) => void
+  setStageScale: (v: number) => void
+  setZoomScale: (v: number) => void
+  setVisualZoom: (v: boolean) => void
+  /** convenience: update multiple stage fields at once */
+  commitStageSnapshot: (
+    v: Partial<
+      Pick<
+        StageFinalState,
+        'stageSizePx' | 'stageRectPx' | 'stageScale' | 'zoomScale' | 'visualZoomOn'
+      >
+    >
+  ) => void
+
+  // finals
   setEmblem: (v: EmblemFinal) => void
   setCurtain: (side: 'left' | 'right', v: CurtainFinal) => void
   setFrame: (v: FrameFinal) => void
@@ -55,43 +70,73 @@ type Actions = {
   // debug controls
   setDebug: (enabled: boolean) => void
   debugDump: (label?: string) => void
+
+  // utility
+  reset: () => void
 }
 
 export type ArtifactPlacementStore = StageFinalState & Actions
 
 export const useArtifactPlacementStore = create<ArtifactPlacementStore>((set, get) => ({
-  arch: undefined,
+  // stage snapshot
+  stageSizePx: undefined,
+  stageRectPx: undefined,
+  stageScale: undefined,
+  zoomScale: undefined,
+  visualZoomOn: undefined,
+
+  // finals
   emblem: undefined,
   curtains: {},
   frame: undefined,
 
-  debug: false,
+  // stage setters
+  setStageSize: (v) => set({ stageSizePx: v }),
+  setStageRect: (v) => set({ stageRectPx: v }),
+  setStageScale: (v) => set({ stageScale: v }),
+  setZoomScale: (v) => set({ zoomScale: v }),
+  setVisualZoom: (v) => set({ visualZoomOn: v }),
+  commitStageSnapshot: (v) => set(v),
 
-  setArch: (v) => set({ arch: v }),
+  // finals setters
   setEmblem: (v) => set({ emblem: v }),
-  setCurtain: (side, v) =>
-    set((s) => ({ curtains: { ...s.curtains, [side]: v } })),
+  setCurtain: (side, v) => set((s) => ({ curtains: { ...s.curtains, [side]: v } })),
   setFrame: (v) => set({ frame: v }),
 
+  // debug
+  debug: false,
   setDebug: (enabled) => set({ debug: enabled }),
-
   debugDump: (label) => {
-    if (!get().debug) return
-    const snapshot = {
-      arch: get().arch,
-      emblem: get().emblem,
-      curtains: get().curtains,
-      frame: get().frame,
-    }
-    const title = label ?? 'ArtifactPlacement Snapshot'
-    // Pretty, collapsible output
-    // You can change to console.log(JSON.stringify(snapshot, null, 2)) if you prefer plain JSON
-    // @ts-ignore - groupCollapsed exists at runtime
-    console.groupCollapsed?.(title)
-    console.table
-      ? console.table(snapshot)
-      : console.log(snapshot)
-    // @ts-ignore
-    console.groupEnd?.()
+    const s = get()
+    if (!s.debug) return
+    console.groupCollapsed(label ?? 'Stage snapshot')
+    console.dir(
+      {
+        stageSizePx: s.stageSizePx,
+        stageRectPx: s.stageRectPx,
+        stageScale: s.stageScale,
+        zoomScale: s.zoomScale,
+        visualZoomOn: s.visualZoomOn,
+
+        emblem: s.emblem,
+        curtains: s.curtains,
+        frame: s.frame,
+      },
+      { depth: null }
+    )
+    console.groupEnd()
   },
+
+  // utility
+  reset: () =>
+    set({
+      stageSizePx: undefined,
+      stageRectPx: undefined,
+      stageScale: undefined,
+      zoomScale: undefined,
+      visualZoomOn: undefined,
+      emblem: undefined,
+      curtains: {},
+      frame: undefined,
+    }),
 }))
