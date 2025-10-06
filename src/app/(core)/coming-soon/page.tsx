@@ -37,20 +37,7 @@ export default function ComingSoonPage() {
         <li>Self-auditing pipelines with local-first autonomy</li>
       </ul>
 
-      <div className="flex flex-wrap gap-4">
-        <Link
-          href="/about"
-          className="inline-block rounded-xl px-5 py-2 text-base font-semibold bg-[var(--BG_NAVBAR)] text-[var(--BRAND_LEAF)] hover:text-[var(--BRAND_ROBOT)] transition-colors"
-        >
-          About me
-        </Link>
-        <Link
-          href="/contact"
-          className="inline-block rounded-xl px-5 py-2 text-base font-semibold border border-[var(--BRAND_LEAF)] text-[var(--TEXT_PRIMARY)] hover:border-[var(--BRAND_ROBOT)] hover:text-[var(--BRAND_ROBOT)] transition-colors"
-        >
-          Get in touch
-        </Link>
-      </div>
+
     </section>
   );
 }
