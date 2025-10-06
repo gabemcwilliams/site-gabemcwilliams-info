@@ -176,7 +176,7 @@ export default function NavBar() {
 
     return (
         <nav
-            className={`h-[16.66vh] bg-[var(--BG_NAVBAR)] text-[var(--BRAND_LEAF)] w-full px-0 flex
+            className={`h-[13vh] bg-[var(--BG_NAVBAR)] text-[var(--BRAND_LEAF)] w-full px-0 flex
       ${compact ? 'justify-start items-center' : 'justify-between items-center'}
       sticky top-0 z-50`}
             style={{
