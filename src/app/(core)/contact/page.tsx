@@ -16,7 +16,16 @@ export default function ContactPage() {
             "
         >
             {/* Left Column */}
-            <section className="md:w-1/2 flex flex-col">
+<section
+  className="
+    text-[var(--TEXT_PRIMARY)]
+    w-full
+    px-6           /* base gutter (phones/tablets) */
+    pb-5
+    pt-10
+    lg:pl-16 lg:pr-8 lg:pt-24  /* align with nav at ≥1024px */
+  "
+>
                 <h1 className="text-4xl font-bold mb-12">Let’s Talk</h1>
 
                 <p className="text-xl mb-8">
