@@ -35,32 +35,43 @@
 }
 
 
-html,
-body {
-    overflow-x: visible !important;
-    overflow-y: visible !important;
-    overscroll-behavior: none;
+/* 0) Kill the global both-edges rule entirely */
+:root {
+  /* remove this: scrollbar-gutter: stable both-edges; */
 }
 
-
+/* 1) Scope the gutter to the scrolling element only */
+html, body { height: 100%; }
 body {
-    background: var(--background);
-    color: var(--foreground);
-    font-family: var(--font-inter), var(--font-sans), sans-serif;
+  overflow-y: auto;
+  overflow-x: hidden;           /* avoid 1px right scrollbars with transforms/images */
+  scrollbar-gutter: stable;     /* single edge, no left gutter */
+  overscroll-behavior: none;
 }
+
+/* 2) Full-bleed bars: do NOT use 100vw */
+nav, footer {
+  scrollbar-gutter: auto;       /* opt-out so they don't inherit any gutter behavior */
+  inline-size: 100%;            /* not 100vw */
+  margin-inline: 0;
+  box-sizing: border-box;
+}
+
+/* Optional safety for browsers that don’t support the property */
+@supports not (scrollbar-gutter: stable) {
+  /* no-op; layout still works without reserved gutter */
+}
+
 
 @layer components {
-    .text-page {
+  .text-page {
+    /* Base (phones & tablets) */
+    @apply pt-10 px-6 text-[var(--TEXT_PRIMARY)];
 
-        @apply
-        pt-24
-        px-8
+    /* Desktop 1024+ — match nav’s left edge (pl-16 = 4rem) */
+    @apply lg:pt-24 lg:pl-16 lg:pr-8;
 
-        md:px-16
-        xl:px-24
-        2xl:px-32
-
-        text-[var(--TEXT_PRIMARY)]
-        ;
-    }
+    /* Slightly wider on XL/2XL if you want */
+    @apply xl:pl-20 xl:pr-10 2xl:pl-24 2xl:pr-12;
+  }
 }

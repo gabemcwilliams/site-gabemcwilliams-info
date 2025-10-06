@@ -4,10 +4,10 @@
 import {useEffect, useState, useId, useRef} from 'react';
 import {usePOIRevealStore} from "@/states/showcase/premiere/usePOIRevealStore";
 
-const MOON_BASE = '/assets/showcase/premiere/moons/moon_base.svg';
-const MOON_BLOOD = '/assets/showcase/premiere/moons/moon_blood.svg';
-const MOON_YELLOW = '/assets/showcase/premiere/moons/moon_yellow.svg';
-const MOON_BRIGHT = '/assets/showcase/premiere/moons/moon_bright.svg';
+const MOON_BASE = '/assets/showcase/premiere/stage_setting/moons/moon_base.svg';
+const MOON_BLOOD = '/assets/showcase/premiere/stage_setting/moons/moon_blood.svg';
+const MOON_YELLOW = '/assets/showcase/premiere/stage_setting/moons/moon_yellow.svg';
+const MOON_BRIGHT = '/assets/showcase/premiere/stage_setting/moons/moon_bright.svg';
 
 type Range = { min: number; max: number };
 type Side = 'left' | 'right' | 'random';

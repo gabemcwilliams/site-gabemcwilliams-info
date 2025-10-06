@@ -1,62 +1,203 @@
 'use client';
 
-import {useRouter} from 'next/navigation';
-
-import {useSpotlightMaskStore} from '@/states/showcase/premiere/useSpotlightMaskStore';
-
 import React, {useEffect, useRef, useState} from 'react';
+import type {JSX} from 'react';
+import {useRouter} from 'next/navigation';
 import * as d3 from 'd3';
+import {useSpotlightMaskStore} from "@/states/showcase/premiere/useSpotlightMaskStore";
+import {useWarmPremiereAssets} from "@/hooks/core/landing/useWarmPremiereAssets";
+
+export type BallSeed = { cx: number; cy: number; r: number };
+
+type Props = {
+
+    widthOK: boolean,
+
+    ballVersion: number
+
+    //   /** Inline element in your H1 used to compute starting cx/cy/r */
+    dotRef: React.RefObject<SVGSVGElement | null>;
+
+    //   /** Inline element in your H1 used to compute starting cx/cy/r */
+    spanRef: React.RefObject<HTMLElement | null>;
+
+    //   /** Main layout container to compute SVG height */
+    mainRef: React.RefObject<HTMLElement | null>;
+};
+
+export default function LandingBall(
+    {
+        widthOK,
+        ballVersion,
+
+        dotRef,
+        spanRef,
+        mainRef,
+
+    }: Props): JSX.Element | null {
 
 
-export default function Home() {
     // ---------------------------------------------------------
     // Constants
     // ---------------------------------------------------------
     const STRETCH_MULTIPLIER = 5;
     const FINAL_RADIUS = 100;
+    const MASK_SHRINK_PX = 2;
+    const maskColor = '#201e1f';
+
+    const MIN_BALL_WIDTH = 1024;
+
+    // Fallbacks if we can’t compute from DOM
+    const cxFallback = 1546.2;
+    const cyFallback = 1114.928 - 211.578125;
+    const rFinal = FINAL_RADIUS;
 
     // ---------------------------------------------------------
     // Refs
     // ---------------------------------------------------------
-
     const router = useRouter();
 
-    const dotRef = useRef<SVGSVGElement | null>(null);           // Page SVG (ball)
-    const spanRef = useRef<HTMLSpanElement | null>(null);        // Anchor for initial ball position
-    const mainRef = useRef<HTMLElement | null>(null);            // Layout container
 
-    const maskSvgRef = useRef<SVGSVGElement | null>(null);       // Global overlay SVG (#global-mask-svg)
-    const spotlightRef = useRef<SVGCircleElement | null>(null);  // Global hole circle (#spotlight-tracker)
-    const maskRectRef = useRef<SVGRectElement | null>(null);     // Global overlay rect
+    const maskSvgRef = useRef<SVGSVGElement | null>(null);
+    const spotlightRef = useRef<SVGCircleElement | null>(null);
+    const maskRectRef = useRef<SVGRectElement | null>(null);
+    const bgCircleRef = useRef<SVGCircleElement | null>(null);
 
-    const bgCircleRef = useRef<SVGCircleElement | null>(null);   // Gradient circle behind the ball (page SVG)
 
-    const MASK_SHRINK_PX = 2; // shrink mask overlap
-
-    // ---------------------------------------------------------
-    // Spotlight defaults
-    // ---------------------------------------------------------
-    const cxFallback = 1546.2;
-    const cyFallback = 1114.928 - 211.578125;
-    const rFinal = FINAL_RADIUS;
-    const maskColor = '#201e1f';
+    const hitboxCenterRef = useRef<{ cx: number; cy: number } | null>(null);
+    const hasStartedRef = useRef(false);
 
     const [ballPosition, setBallPosition] = useState<{ x: number; y: number } | null>(null);
+    const [hydrated, setHydrated] = useState(false);
+
+    useEffect(() => {
+        setHydrated(true);
+    }, []);
 
 
     // ---------------------------------------------------------
-    // Main animation effect
+    // Assets prefect hook
+    // ---------------------------------------------------------
+    useWarmPremiereAssets('/api/v1/premiere-manifest') // warms manifest + prefetches /premiere
+
+
+    // ---------------------------------------------------------
+    // Spotlight handlers
+    // ---------------------------------------------------------
+    const shrink = () => {
+        const ball = document.getElementById('landing-ball-pre-spotlight');
+        const maskSvg = maskSvgRef.current;
+        const pageSvgEl = dotRef.current;
+
+        if (!ball || !maskSvg || !pageSvgEl) {
+            console.warn('Missing ball, global mask SVG, or page SVG');
+            return;
+        }
+
+        const ballBox = ball.getBoundingClientRect();
+        const maskBox = maskSvg.getBoundingClientRect();
+        const pageBox = pageSvgEl.getBoundingClientRect();
+
+        // Global-mask coordinates for the hole
+        const cxMask = ballBox.left - maskBox.left + ballBox.width / 2;
+        const cyMask = ballBox.top - maskBox.top + ballBox.height / 2;
+
+        // Page-SVG coordinates for the gradient circle
+        const cxPage = ballBox.left - pageBox.left + ballBox.width / 2;
+        const cyPage = ballBox.top - pageBox.top + ballBox.height / 2;
+
+        hitboxCenterRef.current = {cx: cxMask, cy: cyMask};
+
+        // Position the global hole
+        if (spotlightRef.current) {
+            d3.select(spotlightRef.current).attr('cx', cxMask).attr('cy', cyMask);
+        }
+
+        // Ensure overlay rect uses the mask
+        if (!maskRectRef.current) {
+            const rect = d3
+                .select(maskSvgRef.current)
+                .append('rect')
+                .attr('id', 'global-mask-svg-overlay')
+                .attr('x', 0)
+                .attr('y', 0)
+                .attr('width', window.innerWidth)
+                .attr('height', window.innerHeight)
+                .attr('fill', maskColor)
+                .attr('mask', 'url(#shrink-mask)')
+                .style('pointer-events', 'none');
+
+            maskRectRef.current = rect.node() as SVGRectElement;
+        } else {
+            d3.select(maskRectRef.current).attr('mask', 'url(#shrink-mask)');
+        }
+
+        // Ensure/position gradient circle behind the ball in the page SVG
+        const pageSvg = d3.select(pageSvgEl);
+        let bgSel = bgCircleRef.current
+            ? d3.select(bgCircleRef.current)
+            : pageSvg.select<SVGCircleElement>('#ground-behind-ball');
+
+        if (bgSel.empty()) {
+            bgSel = pageSvg
+                .insert('circle', '#landing-ball-pre-spotlight') // behind the ball
+                .attr('id', 'ground-behind-ball')
+                .style('fill', 'url(#ground-grad)')
+                .style('pointer-events', 'none')
+                .style('opacity', 1);
+
+            bgCircleRef.current = bgSel.node() as SVGCircleElement;
+        }
+
+        bgSel.attr('cx', cxPage).attr('cy', cyPage).attr('r', rFinal);
+
+        // Animate hole to final size
+        if (spotlightRef.current) {
+            d3.select(spotlightRef.current)
+                .interrupt()
+                .transition()
+                .duration(500)
+                .ease(d3.easeCubicInOut)
+                .attr('r', Math.max(0, rFinal - MASK_SHRINK_PX)); // account for overlap
+        }
+    };
+
+    const unshrink = () => {
+        if (!spotlightRef.current || !maskRectRef.current) return;
+        const diagonal = Math.sqrt(window.innerWidth ** 2 + window.innerHeight ** 2);
+
+        d3.select(spotlightRef.current)
+            .interrupt()
+            .transition()
+            .duration(500)
+            .ease(d3.easeCubicInOut)
+            .attr('r', diagonal)
+            .on('end', () => {
+                d3.select(maskRectRef.current!).remove();
+                maskRectRef.current = null;
+
+                if (bgCircleRef.current) {
+                    d3.select(bgCircleRef.current).remove();
+                    bgCircleRef.current = null;
+                }
+            });
+    };
+
+
+    // ---------------------------------------------------------
+    // Main animation effect (returns cleanup)
     // ---------------------------------------------------------
     function landingAnimationEffect() {
-        const timeout = setTimeout(() => {
+        let tOuter: ReturnType<typeof setTimeout> | null = null;
+        let tInner: ReturnType<typeof setTimeout> | null = null;
+
+        tOuter = setTimeout(() => {
             const svgEl = dotRef.current;
+
+
             const svgElMask = document.querySelector('#global-mask-svg') as SVGSVGElement | null;
             maskSvgRef.current = svgElMask || null;
 
-            if (!svgEl || !svgElMask) {
-                console.warn('SVG elements not ready yet');
-                return;
-            }
 
             const spanEl = spanRef.current;
             const mainEl = mainRef.current;
@@ -69,6 +210,10 @@ export default function Home() {
 
             // Page SVG
             const svg = d3.select(svgEl);
+
+            // nuke anything from the previous run
+            svg.selectAll('*').interrupt();
+            svg.selectAll('*').remove();
 
             // Ensure a <defs> section exists on the page SVG
             let defsLocal = svg.select<SVGDefsElement>('defs');
@@ -95,25 +240,19 @@ export default function Home() {
             if (stopTop.empty()) stopTop = groundGrad.append('stop').attr('offset', '0%');
             if (stopBottom.empty()) stopBottom = groundGrad.append('stop').attr('offset', '100%');
 
-            stopTop
-                .attr('offset', '0%')
-                .attr('stop-color', '#623516');
-
-            stopBottom
-                .attr('offset', '100%')
-                .attr('stop-color', '#623516');
-
+            stopTop.attr('stop-color', '#623516');
+            stopBottom.attr('stop-color', '#623516');
 
             // Gradient orientation
-            groundGrad
-                .attr('x1', '0%').attr('y1', '0%')
-                .attr('x2', '0%').attr('y2', '100%');
+            groundGrad.attr('x1', '0%').attr('y1', '0%').attr('x2', '0%').attr('y2', '100%');
 
             // Size the page SVG
             const extraPadding = FINAL_RADIUS * 3;
+
+            const containerRect = mainEl.getBoundingClientRect();
             svg
-                .attr('width', window.innerWidth)
-                .attr('height', `${mainEl.getBoundingClientRect().height + extraPadding}px`)
+                .attr('width', containerRect.width)
+                .attr('height', containerRect.height + extraPadding)
                 .style('overflow', 'visible');
 
             // Geometry
@@ -123,7 +262,7 @@ export default function Home() {
 
             const cxStart = spanBox.left - svgBox.left + spanBox.width / 2;
             const cyStart = spanBox.top - svgBox.top + spanBox.height / 2;
-            const radius = spanBox.height * 0.08;
+            const radius = spanBox.height * .085;
 
             const cxEnd = Math.max(cxStart + 200, svgBox.width * 0.9);
             const cyEnd = footerBox.top - svgBox.top - radius * STRETCH_MULTIPLIER;
@@ -131,6 +270,7 @@ export default function Home() {
 
             const radiusDiff = finalRadius - radius;
             const expandedRadius = radius * STRETCH_MULTIPLIER;
+
 
             // -----------------------------------------------------
             // Global mask setup
@@ -147,7 +287,8 @@ export default function Home() {
 
             // Ensure global defs/mask
             let defsGlobal = svgMask.select('defs');
-            if (defsGlobal.empty()) { // @ts-ignore
+            if (defsGlobal.empty()) {
+                // @ts-ignore
                 defsGlobal = svgMask.append('defs');
             }
 
@@ -195,6 +336,7 @@ export default function Home() {
                     .attr('mask', 'url(#shrink-mask)');
             }
 
+
             // -----------------------------------------------------
             // Ball draw
             // -----------------------------------------------------
@@ -208,10 +350,11 @@ export default function Home() {
                 .attr('r', radius)
                 .style('fill', '#000');
 
+
             // -----------------------------------------------------
             // Animation
             // -----------------------------------------------------
-            setTimeout(() => {
+            tInner = setTimeout(() => {
                 requestAnimationFrame(() => {
                     ball
                         .transition()
@@ -221,9 +364,7 @@ export default function Home() {
                         .attr('cy', cyEnd)
                         .attrTween('r', function () {
                             const i = d3.interpolate(radius, expandedRadius);
-                            return function (t: number): string {
-                                return i(t).toString();
-                            };
+                            return (t: number) => i(t).toString();
                         })
                         .on('end', function () {
                             d3.select(this)
@@ -300,7 +441,8 @@ export default function Home() {
                                                     const defs = svg.append('defs');
                                                     const mask = defs.append('mask').attr('id', 'shrink-ball-mask');
 
-                                                    mask.append('rect')
+                                                    mask
+                                                        .append('rect')
                                                         .attr('width', '100%')
                                                         .attr('height', '100%')
                                                         .attr('fill', 'black');
@@ -334,7 +476,6 @@ export default function Home() {
                                                         .styleTween('fill', () => d3.interpolateRgb('#B9480B', '#623516'))
                                                         .styleTween('stroke', () => d3.interpolateRgb('#B9480B', '#623516'))
                                                         .style('opacity', 0.8)
-                                                        // inside your d3 on('end') on Landing
                                                         .on('end', () => {
                                                             const api = useSpotlightMaskStore.getState();
                                                             api.setSeed({cx: x, cy: adjustedY, r: finalRadius}); // one-shot seed
@@ -344,7 +485,6 @@ export default function Home() {
                                                                 router.push('/premiere'); // no query params
                                                             });
                                                         });
-
                                                 });
                                         });
                                 });
@@ -353,176 +493,66 @@ export default function Home() {
             }, 30);
         }, 30);
 
-        return () => clearTimeout(timeout);
+
+        // Cleanup
+        return () => {
+            if (tOuter) clearTimeout(tOuter);
+            if (tInner) clearTimeout(tInner);
+
+            // stop any in-flight transitions on this page SVG
+            if (dotRef.current) d3.select(dotRef.current).selectAll('*').interrupt();
+
+            // remove transient overlay rect & bg circle
+            if (maskRectRef.current) {
+                d3.select(maskRectRef.current).remove();
+                maskRectRef.current = null;
+            }
+
+            if (bgCircleRef.current) {
+                d3.select(bgCircleRef.current).remove();
+                bgCircleRef.current = null;
+            }
+        };
     }
 
-    useEffect(landingAnimationEffect, []);
-
     // ---------------------------------------------------------
-    // Spotlight handlers
+    // Start animation only at ≥ 1024, once
     // ---------------------------------------------------------
-    const hitboxCenterRef = useRef<{ cx: number; cy: number } | null>(null);
+    // useEffect(() => {
+    //     if (!widthOK || hasStartedRef.current) return;
+    //     hasStartedRef.current = true;
+    //     const cleanup = landingAnimationEffect();
+    //     return cleanup;
+    // }, [widthOK, ballVersion]);
 
-    const shrink = () => {
-        const ball = document.getElementById('landing-ball-pre-spotlight');
-        const maskSvg = maskSvgRef.current;
-        const pageSvgEl = dotRef.current;
-
-        if (!ball || !maskSvg || !pageSvgEl) {
-            console.warn('Missing ball, global mask SVG, or page SVG');
+    useEffect(() => {
+        if (!widthOK) {
+            hasStartedRef.current = false;     // gate closed → allow future restart
             return;
         }
 
-        const ballBox = ball.getBoundingClientRect();
-        const maskBox = maskSvg.getBoundingClientRect();
-        const pageBox = pageSvgEl.getBoundingClientRect();
+        if (hasStartedRef.current) return;
+        hasStartedRef.current = true;
 
-        // Global-mask coordinates for the hole
-        const cxMask = ballBox.left - maskBox.left + ballBox.width / 2;
-        const cyMask = ballBox.top - maskBox.top + ballBox.height / 2;
-
-        // Page-SVG coordinates for the gradient circle
-        const cxPage = ballBox.left - pageBox.left + ballBox.width / 2;
-        const cyPage = ballBox.top - pageBox.top + ballBox.height / 2;
-
-        hitboxCenterRef.current = {cx: cxMask, cy: cyMask};
-
-        // Position the global hole
-        if (spotlightRef.current) {
-            d3.select(spotlightRef.current)
-                .attr('cx', cxMask)
-                .attr('cy', cyMask);
-        }
-
-        // Ensure overlay rect uses the mask
-        if (!maskRectRef.current) {
-            const rect = d3
-                .select(maskSvgRef.current)
-                .append('rect')
-                .attr('id', 'global-mask-svg-overlay')
-                .attr('x', 0)
-                .attr('y', 0)
-                .attr('width', window.innerWidth)
-                .attr('height', window.innerHeight)
-                .attr('fill', maskColor)
-                .attr('mask', 'url(#shrink-mask)')
-                .style('pointer-events', 'none');
-
-            maskRectRef.current = rect.node() as SVGRectElement;
-        } else {
-            d3.select(maskRectRef.current).attr('mask', 'url(#shrink-mask)');
-        }
-
-        // Ensure/position gradient circle behind the ball in the page SVG
-        const pageSvg = d3.select(pageSvgEl);
-
-        let bgSel = bgCircleRef.current
-            ? d3.select(bgCircleRef.current)
-            : pageSvg.select<SVGCircleElement>('#ground-behind-ball');
-
-        if (bgSel.empty()) {
-            bgSel = pageSvg
-                .insert('circle', '#landing-ball-pre-spotlight') // behind the ball
-                .attr('id', 'ground-behind-ball')
-                .style('fill', 'url(#ground-grad)')
-                .style('pointer-events', 'none')
-                .style('opacity', 1);
-
-            bgCircleRef.current = bgSel.node() as SVGCircleElement;
-        }
-
-        bgSel.attr('cx', cxPage).attr('cy', cyPage).attr('r', rFinal);
-
-        // Animate hole to final size
-        if (spotlightRef.current) {
-            d3.select(spotlightRef.current)
-                .interrupt()
-                .transition()
-                .duration(500)
-                .ease(d3.easeCubicInOut)
-                .attr('r', Math.max(0, rFinal - MASK_SHRINK_PX)); // account for overlap
-        }
-    };
-
-    const unshrink = () => {
-        if (!spotlightRef.current || !maskRectRef.current) return;
-
-        const diagonal = Math.sqrt(window.innerWidth ** 2 + window.innerHeight ** 2);
-
-        d3.select(spotlightRef.current)
-            .interrupt()
-            .transition()
-            .duration(500)
-            .ease(d3.easeCubicInOut)
-            .attr('r', diagonal)
-            .on('end', () => {
-                d3.select(maskRectRef.current!).remove();
-                maskRectRef.current = null;
-
-                if (bgCircleRef.current) {
-                    d3.select(bgCircleRef.current).remove();
-                    bgCircleRef.current = null;
-                }
-            });
-    };
+        const cleanup = landingAnimationEffect();
+        return () => {
+            cleanup?.();
+            hasStartedRef.current = false;     // allow restart on next change
+        };
+    }, [widthOK, ballVersion]);
 
     // ---------------------------------------------------------
     // Render
     // ---------------------------------------------------------
     return (
         <>
-            <main
-                ref={mainRef}
-                style={{zIndex: 500, height: '33vh'}}
-                className="
-                            flex-grow min-h-0 h-full
-                            bg-[var(--background)]
-                            text-[var(--TEXT_PRIMARY)]
-                            flex justify-start px-[8rem] pt-[6rem]
-                            relative
-                            "
-            >
-                <div className="max-w-screen-md relative">
-                    <h1 className="text-[4rem] font-bold leading-tight">
-                        Experiment
-                        {/*
-                          Invisible "shim" period:
-                          - Inline-block anchor for the ball’s initial geometry.
-                          - Colored to match background; not user-visible.
-                          - Provides stable measurements via getBoundingClientRect.
-                        */}
-                        <span
-                            ref={spanRef}
-                            className="inline-block text-[var(--background)] translate-y-[0.5em] w-[0.5ch] h-[1em] align-baseline"
-                            aria-hidden="true"
-                        >
-                          .
-                        </span>
-                        <br/>
-                        Build.<br/>
-                        Predict.
-                    </h1>
-                </div>
+            {/* Only mount the SVG when eligible (your gate) */}
 
-                {/* Page SVG for the ball & local visuals */}
-                <svg ref={dotRef} style={{position: 'absolute', top: 0, left: 0, zIndex: 10}}/>
+            <svg ref={dotRef} style={{position: 'absolute', top: 0, left: 0, zIndex: 10}}/>
 
-                {/*{ballPosition && (*/}
-                {/*    <img*/}
-                {/*        src="/assets/showcase/premiere/click_me.svg"*/}
-                {/*        alt=""*/}
-                {/*        role="presentation"*/}
-                {/*        style={{*/}
-                {/*            position: 'absolute',*/}
-                {/*            left: `${ballPosition.x - 210}px`,*/}
-                {/*            top: `${ballPosition.y - 10}px`,*/}
-                {/*            width: '100px',*/}
-                {/*            transform: 'translateY(-50%)',*/}
-                {/*            pointerEvents: 'none',*/}
-                {/*        }}*/}
-                {/*    />*/}
-                {/*)}*/}
-            </main>
+
         </>
     );
+
+
 }

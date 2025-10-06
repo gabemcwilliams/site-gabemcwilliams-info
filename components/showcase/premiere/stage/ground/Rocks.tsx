@@ -2,7 +2,7 @@
 
 import React, {memo, useMemo, useEffect, useState} from 'react';
 import {computeGroundDepth} from '@/components/utils/computeGroundDepth';
-import {useStageGroundSizeClass} from '@/hooks/useStageGroundSizeClass';
+import {useStageGroundSizeClass} from '@/hooks/showcase/premiere/stage/useStageGroundSizeClass';
 
 export interface RocksProps {
     visible?: boolean;
@@ -22,16 +22,16 @@ export type RockLayer = {
 };
 
 const rockImages = [
-    '/assets/showcase/premiere/rocks/rock_2.webp',
-    '/assets/showcase/premiere/rocks/rock_3.webp',
-    '/assets/showcase/premiere/rocks/rock_5.webp',
+    '/assets/showcase/premiere/stage_setting/rocks/rock_2.webp',
+    '/assets/showcase/premiere/stage_setting/rocks/rock_3.webp',
+    '/assets/showcase/premiere/stage_setting/rocks/rock_5.webp',
 ];
 
 export const defaultRockLayers: RockLayer[] = [
     {
         imgSet: rockImages,
       opacity: 0.1,
-        heightVh: .5,
+        heightVh: .3,
         bottomVh: 50,
         count: 5,
         filter: 'grayscale(45%) brightness(0.45) contrast(1.05)'
@@ -39,7 +39,7 @@ export const defaultRockLayers: RockLayer[] = [
     {
         imgSet: rockImages,
         opacity: 0.3,
-        heightVh: 1,
+        heightVh: .7,
         bottomVh: 50,
         count: 3,
         filter: 'grayscale(45%) brightness(0.55) contrast(1.05)'
@@ -189,9 +189,9 @@ function Rocks(
     // Pick gutter width per viewport
     const vp = useStageGroundSizeClass();
     const centerBlockPct =
-        vp === 'mobile' ? 75 :      // very wide gap on mobile
+        vp === 'mobile' ? 50 :      // very wide gap on mobile
             vp === 'desktop' ? 70 :     // default gap
-                30;                         // tighter on ultrawide
+                33;                         // tighter on ultrawide
 
     const plan = useMemo(
         () => buildPlan(layers, centerBlockPct, edgeGutterPct),
