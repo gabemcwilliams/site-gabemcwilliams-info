@@ -38,6 +38,22 @@ type Layout = {
   curtains: { left: CurtainParams; right: CurtainParams };
 };
 
+
+// Props for the Stage component
+export interface StageProps {
+  /** Force zoomed visuals (in addition to internal zoom phases) */
+  zoom?: boolean;
+  /** Hide emblem/clicks during closeup */
+  closeup?: boolean;
+  /** Called when either curtain is activated */
+  onCurtainClick?: () => void;
+  /** Called when the emblem is clicked */
+  onEmblemClick?: () => void;
+  /** z-index for the root wrapper */
+  zIndex?: number;
+}
+
+
 /* =========================
    Assets
    ========================= */
