@@ -85,6 +85,7 @@ export default function LandingPageCollapsingMask({
       pointerEvents: 'none',
       zIndex: String(OVERLAY_Z),
     });
+
     document.body.appendChild(svgEl);
     svgRef.current = svgEl;
 

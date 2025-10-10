@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* ── Your design tokens (unchanged) ─────────────────────────────────────────── */
 :root {
     /* Base theme colors */
     --background: #ffffff;
@@ -20,11 +21,11 @@
     --BG_FOOTER: #E67F47;
 
     /* Zone logic: navbar and footer */
-    --NAVBAR_PRIMARY: var(--BG_NAVBAR); /* #201e1f */
-    --NAVBAR_SECONDARY: #201e1f; /* much lighter for contrast */
+    --NAVBAR_PRIMARY: var(--BG_NAVBAR);
+    --NAVBAR_SECONDARY: #201e1f;
 
-    --FOOTER_PRIMARY: var(--BG_FOOTER); /* #736D6D */
-    --FOOTER_SECONDARY: #B8470B; /* darker than navbar */
+    --FOOTER_PRIMARY: var(--BG_FOOTER);
+    --FOOTER_SECONDARY: #B8470B;
 
     /* Optional semantic tokens */
     --color-accent: var(--BRAND_ROBOT);
@@ -32,46 +33,88 @@
     --color-text: var(--TEXT_PRIMARY);
     --color-nav: var(--NAVBAR_PRIMARY);
     --color-footer: var(--FOOTER_PRIMARY);
+
+    /* Splash-specific (added) */
+    --splash-bg: var(--BG_NAVBAR);
+    --splash-fg: #d7d7d7;
+    --splash-fade-ms: 180;
 }
 
-
-/* 0) Kill the global both-edges rule entirely */
-:root {
-  /* remove this: scrollbar-gutter: stable both-edges; */
-}
-
-/* 1) Scope the gutter to the scrolling element only */
+/* ── Scroll behavior (yours, untouched) ─────────────────────────────────────── */
 html, body { height: 100%; }
 body {
   overflow-y: auto;
-  overflow-x: hidden;           /* avoid 1px right scrollbars with transforms/images */
-  scrollbar-gutter: stable;     /* single edge, no left gutter */
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
   overscroll-behavior: none;
 }
 
-/* 2) Full-bleed bars: do NOT use 100vw */
 nav, footer {
-  scrollbar-gutter: auto;       /* opt-out so they don't inherit any gutter behavior */
-  inline-size: 100%;            /* not 100vw */
+  scrollbar-gutter: auto;
+  inline-size: 100%;
   margin-inline: 0;
   box-sizing: border-box;
 }
 
-/* Optional safety for browsers that don’t support the property */
-@supports not (scrollbar-gutter: stable) {
-  /* no-op; layout still works without reserved gutter */
+@supports not (scrollbar-gutter: stable) {}
+
+/* ── First-paint splash & resize gate ───────────────────────────────────────── */
+#first-paint-splash {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--splash-bg);
+  z-index: 2147483647;
+  opacity: 1;
+  transition: opacity var(--splash-fade-ms) ease-out,
+              visibility 0s linear var(--splash-fade-ms);
+  visibility: visible;
+  scrollbar-gutter: auto; /* opt-out for full bleed */
 }
 
+#first-paint-splash figure {
+  display: grid;
+  gap: 1rem;
+  place-items: center;
+  text-align: center;
+}
 
+#first-paint-splash img {
+  width: min(60vw, 420px);
+  height: auto;
+}
+
+#first-paint-splash figcaption {
+  color: var(--splash-fg);
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  opacity: 0.85;
+}
+
+/* Hide splash once app is ready */
+html.app-ready:not(.resizing) #first-paint-splash {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Keep splash visible if JS disabled */
+html.no-js #first-paint-splash {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Reduced motion users */
+@media (prefers-reduced-motion: reduce) {
+  #first-paint-splash { transition: none; }
+}
+
+/* ── Text layout helper (yours, untouched) ──────────────────────────────────── */
 @layer components {
   .text-page {
-    /* Base (phones & tablets) */
     @apply pt-10 px-6 text-[var(--TEXT_PRIMARY)];
-
-    /* Desktop 1024+ — match nav’s left edge (pl-16 = 4rem) */
     @apply lg:pt-24 lg:pl-16 lg:pr-8;
-
-    /* Slightly wider on XL/2XL if you want */
     @apply xl:pl-20 xl:pr-10 2xl:pl-24 2xl:pr-12;
   }
 }

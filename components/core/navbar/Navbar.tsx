@@ -9,9 +9,21 @@ import {useLogoAnchorStore} from '@/states/core/useLogoAnchorStore';
 
 import HamburgerMenu from '@/components/core/navbar/HamburgerMenu'
 
+import {useResizeStore} from '@/states/useResizeProvider';
+
+
+function useHasMounted() {
+    const [m, set] = useState(false);
+    useEffect(() => set(true), []);
+    return m;
+}
+
 export default function NavBar() {
 
+
     const MIN_BALL_WIDTH = 1297;
+
+    const hasMounted = useHasMounted();
 
     const pathname = usePathname();
     const isHome = pathname === '/' || pathname === '/premiere';
@@ -33,14 +45,9 @@ export default function NavBar() {
     const LOGO_IMG_TEXT_SRC = '/assets/logos/logo_img_text.svg';
     const LOGO_TEXT_SRC = '/assets/logos/logo_text.svg';
 
-    // ★ Compact mode toggle at the same threshold you use elsewhere
-    const [compact, setCompact] = useState(false);
-    useEffect(() => {
-        const apply = () => setCompact(window.innerWidth < MIN_BALL_WIDTH);
-        apply();
-        window.addEventListener('resize', apply, {passive: true});
-        return () => window.removeEventListener('resize', apply);
-    }, []);
+
+    const width = useResizeStore(s => s.width);
+    const compact = hasMounted ? width < MIN_BALL_WIDTH : true;
 
     useEffect(() => {
         if (isHome) {

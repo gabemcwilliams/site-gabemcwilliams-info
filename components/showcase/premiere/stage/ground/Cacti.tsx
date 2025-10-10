@@ -1,7 +1,7 @@
 'use client';
 
 import React, {memo, useMemo, useEffect, useState} from 'react';
-import {computeGroundDepth} from '@/components/utils/computeGroundDepth';
+import {computeGroundDepth} from '@/components/showcase/premiere/stage/ground/computeGroundDepth';
 import {useStageGroundSizeClass} from '@/hooks/showcase/premiere/stage/useStageGroundSizeClass';
 
 export interface CactiProps {
