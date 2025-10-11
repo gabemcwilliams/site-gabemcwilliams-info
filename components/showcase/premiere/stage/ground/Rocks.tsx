@@ -2,13 +2,18 @@
 
 import React, {memo, useMemo, useEffect, useState} from 'react';
 import {computeGroundDepth} from '@/components/showcase/premiere/stage/ground/computeGroundDepth';
-import {useStageGroundSizeClass} from '@/hooks/showcase/premiere/stage/useStageGroundSizeClass';
+
+// 🔄 new: pull stage + viewport from stores (no breakpoint guessing)
+import {useArtifactPlacementStore} from '@/states/showcase/premiere/stage_setting/useArtifactPlacementStore';
+import {useResizeStore} from '@/states/useResizeProvider';
+
+const STAGE_BUFFER = 4.1
 
 export interface RocksProps {
     visible?: boolean;
     pointerEvents?: 'auto' | 'none';
     layers?: RockLayer[];
-    centerBlockPct?: number;
+    centerBlockPct?: number;   // optional external override
     edgeGutterPct?: number;
 }
 
@@ -28,47 +33,65 @@ const rockImages = [
 ];
 
 export const defaultRockLayers: RockLayer[] = [
-    {
-        imgSet: rockImages,
-      opacity: 0.1,
-        heightVh: .3,
-        bottomVh: 50,
-        count: 5,
-        filter: 'grayscale(45%) brightness(0.45) contrast(1.05)'
-    },
-    {
-        imgSet: rockImages,
-        opacity: 0.3,
-        heightVh: .7,
-        bottomVh: 50,
-        count: 3,
-        filter: 'grayscale(45%) brightness(0.55) contrast(1.05)'
-    },
-    {
-        imgSet: rockImages,
-        opacity: 0.5,
-        heightVh: 2,
-        bottomVh: 40,
-        count: 5,
-        filter: 'grayscale(40%) brightness(0.65) contrast(1.08)'
-    },
-    {
-        imgSet: rockImages,
-        opacity: 0.7,
-        heightVh: 9,
-        bottomVh: 15,
-        count: 2,
-        filter: 'grayscale(35%) brightness(0.75) contrast(1.1)'
-    },
-    {
-        imgSet: rockImages,
-        opacity: 1,
-        heightVh: 5,
-        bottomVh: 13,
-        count: 3,
-        filter: 'grayscale(30%) brightness(1.0) contrast(1.12)'
-    },
+  {
+    imgSet: rockImages,
+    opacity: 0.1,
+    heightVh: 0.3,
+    bottomVh: 50,
+    count: 5,
+    filter: 'grayscale(50%) brightness(0.36) contrast(0.98)', // darkest, dullest
+  },
+  {
+    imgSet: rockImages,
+    opacity: 1,
+    heightVh: 0.7,
+    bottomVh: 50,
+    count: 3,
+    filter: 'grayscale(48%) brightness(0.38) contrast(0.99)',
+  },
+  {
+    imgSet: rockImages,
+    opacity: 1,
+    heightVh: 2,
+    bottomVh: 40,
+    count: 3,
+    filter: 'grayscale(46%) brightness(0.40) contrast(1.00)',
+  },
+  {
+    imgSet: rockImages,
+    opacity: 1,
+    heightVh: 4,
+    bottomVh: 30,
+    count: 3,
+    filter: 'grayscale(44%) brightness(0.5) contrast(1.01)',
+  },
+  {
+    imgSet: rockImages,
+    opacity: 1,
+    heightVh: 3,
+    bottomVh: 29,
+    count: 2,
+    filter: 'grayscale(42%) brightness(0.64) contrast(1.02)',
+  },
+  {
+    imgSet: rockImages,
+    opacity: 1,
+    heightVh: 3,
+    bottomVh: 14,
+    count: 1,
+    filter: 'grayscale(40%) brightness(0.96) contrast(1.03)',
+  },
+  {
+    imgSet: rockImages,
+    opacity: 1,
+    heightVh: 5,
+    bottomVh: 15,
+    count: 1,
+    filter: 'grayscale(38%) brightness(1) contrast(1.04)', // lightest, most contrast
+  },
 ];
+
+
 
 // Helpers
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -93,7 +116,7 @@ function seededShuffle<T>(arr: T[], rnd: () => number): T[] {
 
 // Layout builder (with divider)
 function buildPlan(layers: RockLayer[], centerBlockPct = 60, edgeGutterPct = 3) {
-    // Quick seeds per render (fine since you gate on `mounted`)
+    // Quick seeds per render (okay since you gate on `mounted`)
     const posSeed = Math.floor(Math.random() * 100000) || 1;
     const imgSeed = Math.floor(Math.random() * 100000) || 2;
 
@@ -141,8 +164,7 @@ function buildPlan(layers: RockLayer[], centerBlockPct = 60, edgeGutterPct = 3) 
         const imgOrder = seededShuffle(layer.imgSet, imgPickRnd);
 
         // Horizontal jitter based on slot width
-        const totalSpan =
-            Math.max(0, blockL - leftEdge) + Math.max(0, rightEdge - blockR);
+        const totalSpan = Math.max(0, blockL - leftEdge) + Math.max(0, rightEdge - blockR);
         const slotWidth = positions.length ? totalSpan / positions.length : 0;
         const jitterAmp = slotWidth * 0.25; // rocks: slightly less jitter than cacti
 
@@ -170,28 +192,36 @@ function buildPlan(layers: RockLayer[], centerBlockPct = 60, edgeGutterPct = 3) 
     });
 }
 
-function Rocks(
-    {
-        visible = true,
-        pointerEvents = 'none',
-        layers = defaultRockLayers,
-        edgeGutterPct = 2,
-    }: RocksProps) {
+function Rocks({
+                   visible = true,
+                   pointerEvents = 'none',
+                   layers = defaultRockLayers,
+                   edgeGutterPct = 2,
+                   centerBlockPct: centerBlockPctOverride, // allow caller override if needed
+               }: RocksProps) {
     const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
 
-    // Named mount effect (no logic change)
-    function markMountedEffect() {
-        setMounted(true);
-    }
+    // 🔎 pull live stage + viewport values
+    const stageRect = useArtifactPlacementStore(s => s.stageRectPx);
+    const visualZoomOn = useArtifactPlacementStore(s => s.visualZoomOn);
+    const vw = useResizeStore(s => s.width);
 
-    useEffect(markMountedEffect, []);
+    // 🧮 derive center gutter from stage width vs viewport (or accept external override)
+    const centerBlockPct = useMemo(() => {
+        if (typeof centerBlockPctOverride === 'number') {
+            return centerBlockPctOverride;
+        }
+        const stageW = stageRect?.width ?? 0;
+        const viewportW = vw ?? 0;
+        if (stageW <= 0 || viewportW <= 0) return 66; // safe first-paint fallback
 
-    // Pick gutter width per viewport
-    const vp = useStageGroundSizeClass();
-    const centerBlockPct =
-        vp === 'mobile' ? 50 :      // very wide gap on mobile
-            vp === 'desktop' ? 70 :     // default gap
-                33;                         // tighter on ultrawide
+        const raw = (stageW / viewportW) * 100;
+        const buffer = STAGE_BUFFER
+        const val = raw + buffer;
+
+        return Math.max(20, Math.min(90, val));
+    }, [centerBlockPctOverride, stageRect?.width, vw, visualZoomOn]);
 
     const plan = useMemo(
         () => buildPlan(layers, centerBlockPct, edgeGutterPct),
@@ -231,7 +261,7 @@ function Rocks(
                                 position: 'absolute',
                                 bottom: 0,
                                 left: item.leftPctStr,
-                                transform: 'translate(-50%,0)',
+                                transform: `translate(-50%, ${item.translateYStr}) rotate(${item.rotateStr}) scale(${item.scaleStr})`,
                                 height: '100%',
                                 width: 'auto',
                                 objectFit: 'contain',

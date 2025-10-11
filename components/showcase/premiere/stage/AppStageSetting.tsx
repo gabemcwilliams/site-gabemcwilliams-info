@@ -256,17 +256,9 @@ export default function AppStageSetting() {
             >
                 <Ground top={bgLayout.gradientTop} height={bgLayout.gradientHeight} zIndex={0} from="black"
                         to="#623516"/>
-                <div
-                    style={{
-                        position: 'absolute',
-                        top: bgLayout.gradientTop,
-                        height: bgLayout.gradientHeight,
-                        width: '100%',
-                        background: 'linear-gradient(to bottom, black, #623516)',
-                        zIndex: 0,
-                    }}
-                />
-            </div>
+
+
+
 
             {/* CSS helper for blur effect on non-curtains */}
             <style jsx>{`
@@ -280,6 +272,7 @@ export default function AppStageSetting() {
                     pointer-events: none !important;
                 }
             `}</style>
+            </div>
         </div>
     );
 }

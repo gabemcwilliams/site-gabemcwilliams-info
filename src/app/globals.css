@@ -80,10 +80,7 @@ nav, footer {
   text-align: center;
 }
 
-#first-paint-splash img {
-  width: min(60vw, 420px);
-  height: auto;
-}
+
 
 #first-paint-splash figcaption {
   color: var(--splash-fg);

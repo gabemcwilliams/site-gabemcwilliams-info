@@ -84,7 +84,7 @@ export default function NavBar() {
                 const width = snap(r.width);
                 const height = snap(r.height);
 
-                console.debug('[NavBar anchor]', {left, top, width, height, ts: Date.now()});
+                // console.debug('[NavBar anchor]', {left, top, width, height, ts: Date.now()});
                 setAnchor({left, top}); // local
                 setGlobalAnchor({
                     left,
