@@ -63,8 +63,6 @@ const ASPECT_RATIO = '2000 / 1000';
    Layout (ratio + caps)
    ========================= */
 
-// Global zoom-out (1 = current size; <1 = smaller; >1 = larger)
-const STAGE_GLOBAL_SCALE = 0.90;
 
 // Ratio knobs
 const STAGE_RATIO_BASE = 0.36; // overall baseline (in vw units)
@@ -75,12 +73,12 @@ const STAGE_MIN_PX = 10;   // feel free to lower/raise
 const STAGE_MAX_PX = 900;  // canonical upper bound you had before
 
 // Top padding curve (unchanged behavior)
-const TOP_PAD_VH_BASE  = 0.350; // 35% of viewport height baseline
+const TOP_PAD_VH_BASE  = 0.450; // 35% of viewport height baseline
 const TOP_PAD_STRENGTH = 0.25;  // curvature strength
 const TOP_PAD_EXPONENT = 1.5;   // curvature exponent
 
 // Bottom padding as pure vh
-const PAD_BOTTOM_VH = 0.4;
+const PAD_BOTTOM_VH = 1;
 
 // Emblem ratios relative to the stage box
 const EMBLEM_TOP_RATIO   = 0.075;

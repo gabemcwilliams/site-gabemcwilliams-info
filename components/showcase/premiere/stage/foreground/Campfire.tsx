@@ -52,6 +52,7 @@ const FLAME_CAP = {
     SWAP_MS: {MIN: 500, MAX: 1200},     // animation timing caps
 } as const;
 
+
 const CORE_FLAMES = [
     '/assets/showcase/premiere/stage_setting/campfire/flame_1.svg',
     '/assets/showcase/premiere/stage_setting/campfire/flame_2.svg',
