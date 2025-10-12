@@ -103,9 +103,9 @@ const AppStageSettingLazy = dynamic(
 );
 
 export default function Premiere() {
-    const router = useRouter(); // ✅ ADD THIS first
+    const router = useRouter(); //
 
-    // ✅ WIDTH GATE — runs before anything heavy mounts
+    //  WIDTH GATE — runs before anything heavy mounts
     useEffect(() => {
         const MIN_WIDTH = 1024;                 // set your threshold here
         if (window.innerWidth < MIN_WIDTH) {

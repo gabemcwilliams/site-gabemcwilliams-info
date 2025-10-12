@@ -173,13 +173,14 @@ function buildPlan(
 }
 
 
-function Cacti({
-                   visible = true,
-                   pointerEvents = 'none',
-                   layers = defaultCactusLayers,
-                   edgeGutterPct = 2,
-                   centerBlockPct: centerBlockPctOverride, // optional override
-               }: CactiProps) {
+function Cacti(
+    {
+        visible = true,
+        pointerEvents = 'none',
+        layers = defaultCactusLayers,
+        edgeGutterPct = 2,
+        centerBlockPct: centerBlockPctOverride, // optional override
+    }: CactiProps) {
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
 

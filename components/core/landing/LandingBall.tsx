@@ -7,7 +7,7 @@ import * as d3 from 'd3';
 import {useResizeStore} from '@/states/useResizeProvider';
 import {useSpotlightMaskStore} from '@/states/showcase/premiere/useSpotlightMaskStore';
 import {useWarmPremiereAssets} from "@/hooks/core/landing/useWarmPremiereAssets";
-import { shallow } from 'zustand/shallow';
+
 
 export type BallSeed = { cx: number; cy: number; r: number };
 
@@ -517,6 +517,7 @@ const h = useResizeStore(s => s.height);
                                                             api.setEnabled(true);
 
                                                             queueMicrotask(() => {
+                                                                sessionStorage.setItem('premiereFromLanding', '1');
                                                                 router.push('/premiere'); // no query params
                                                             });
                                                         });
