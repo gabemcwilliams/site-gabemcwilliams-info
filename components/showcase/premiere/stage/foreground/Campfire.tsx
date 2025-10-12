@@ -40,15 +40,15 @@ const RING_SRC = '/assets/showcase/premiere/stage_setting/campfire/campfire_ring
 
 // ---------- size & timing caps you can tweak in one place ----------
 const RING_CAP = {
-    WIDTH_VW: {MIN: 2, MAX: 9},        // ring width in vw
-    BOTTOM_VH: {MIN: 2, MAX: 20},      // ring bottom offset in vh
-    HEIGHT_VH: {MIN: 2, MAX: 16},       // ring height fallback in vh (used pre-measure)
+    WIDTH_VW: {MIN: 9, MAX: 20},        // ring width in vw
+    BOTTOM_VH: {MIN: 14, MAX: 30},      // ring bottom offset in vh
+    HEIGHT_VH: {MIN: 8, MAX: 16},       // ring height fallback in vh (used pre-measure)
 } as const;
 
 const FLAME_CAP = {
-    HEIGHT_VH: {MIN: 4, MAX: 25},     // absolute flame height in vh
-    BOTTOM_VH: {MIN: 0, MAX: 21},       // absolute flame bottom in vh
-    OPACITY: {MIN: 0.3, MAX: .5},
+    HEIGHT_VH: {MIN: 4, MAX: 20},     // absolute flame height in vh
+    BOTTOM_VH: {MIN: 15, MAX: 25},       // absolute flame bottom in vh
+    OPACITY: {MIN: 0.2, MAX: .5},
     SWAP_MS: {MIN: 500, MAX: 1200},     // animation timing caps
 } as const;
 
