@@ -40,8 +40,8 @@ export default function PremiereSpotlightSearchMask({
   followSize = 'match',
   anchorInsetPx,
   offsetPx,
-  scaleX = 1.05,
-  scaleY = 1.05,
+  scaleX = 1,
+  scaleY = 1,
   revealMarginPx = 150,
   spotlightId = 'spotlight-tracker',
   idleHideAfterMs = 500,      // <— half-second auto-hide

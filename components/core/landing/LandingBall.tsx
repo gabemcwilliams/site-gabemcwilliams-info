@@ -4,8 +4,10 @@ import React, {useEffect, useRef, useState} from 'react';
 import type {JSX} from 'react';
 import {useRouter} from 'next/navigation';
 import * as d3 from 'd3';
-import {useSpotlightMaskStore} from "@/states/showcase/premiere/useSpotlightMaskStore";
+import {useResizeStore} from '@/states/useResizeProvider';
+import {useSpotlightMaskStore} from '@/states/showcase/premiere/useSpotlightMaskStore';
 import {useWarmPremiereAssets} from "@/hooks/core/landing/useWarmPremiereAssets";
+
 
 export type BallSeed = { cx: number; cy: number; r: number };
 
@@ -14,6 +16,8 @@ type Props = {
     widthOK: boolean,
 
     ballVersion: number
+
+
 
     //   /** Inline element in your H1 used to compute starting cx/cy/r */
     dotRef: React.RefObject<SVGSVGElement | null>;
@@ -45,6 +49,7 @@ export default function LandingBall(
     const MASK_SHRINK_PX = 2;
     const maskColor = '#201e1f';
 
+
     const MIN_BALL_WIDTH = 1024;
 
     // Fallbacks if we can’t compute from DOM
@@ -69,6 +74,36 @@ export default function LandingBall(
 
     const [ballPosition, setBallPosition] = useState<{ x: number; y: number } | null>(null);
     const [hydrated, setHydrated] = useState(false);
+
+const w = useResizeStore(s => s.width);
+const h = useResizeStore(s => s.height);
+
+
+    function measureBallCenter(): { x: number; y: number } | null {
+        const ballEl = document.getElementById('landing-ball-pre-spotlight');
+        const svgBox = dotRef.current?.getBoundingClientRect();
+        if (!ballEl || !svgBox) return null;
+        const b = ballEl.getBoundingClientRect();
+        // convert to page-SVG local coords (same space the mask expects)
+        return {x: b.left - svgBox.left + b.width / 2, y: b.top - svgBox.top + b.height / 2};
+    }
+
+// whenever viewport changes and the ball is currently running/visible, push a new seed
+    useEffect(() => {
+        if (!widthOK || !hasStartedRef.current) return; // only if the ball run is active
+        const t = setTimeout(() => {
+            const c = measureBallCenter();
+            if (!c) return;
+            // if your mask wants navbar-adjusted Y, add it here
+            const navH = document.querySelector('nav')?.getBoundingClientRect().height ?? 0;
+            useSpotlightMaskStore.getState().setSeed({
+                cx: c.x,
+                cy: c.y + navH,
+                r: FINAL_RADIUS,
+            });
+        }, 120); // small debounce so we don't thrash during drag-resize
+        return () => clearTimeout(t);
+    }, [w, h, widthOK, ballVersion]); // also re-seed on ball restart
 
     useEffect(() => {
         setHydrated(true);
@@ -482,6 +517,7 @@ export default function LandingBall(
                                                             api.setEnabled(true);
 
                                                             queueMicrotask(() => {
+                                                                sessionStorage.setItem('premiereFromLanding', '1');
                                                                 router.push('/premiere'); // no query params
                                                             });
                                                         });

@@ -1,14 +1,19 @@
 'use client';
 
 import React, {memo, useMemo, useEffect, useState} from 'react';
-import {computeGroundDepth} from '@/components/utils/computeGroundDepth';
-import {useStageGroundSizeClass} from '@/hooks/showcase/premiere/stage/useStageGroundSizeClass';
+import {computeGroundDepth} from '@/components/showcase/premiere/stage/ground/computeGroundDepth';
+
+
+import {useArtifactPlacementStore} from '@/states/showcase/premiere/stage_setting/useArtifactPlacementStore';
+import {useResizeStore} from '@/states/useResizeProvider';
+
+const STAGE_BUFFER = 11
 
 export interface CactiProps {
     visible?: boolean;
     pointerEvents?: 'auto' | 'none';
     layers?: CactusLayer[];
-    centerBlockPct?: number;
+    centerBlockPct?: number; // optional external override
     edgeGutterPct?: number;
 }
 
@@ -37,7 +42,7 @@ export const defaultCactusLayers: CactusLayer[] = [
         opacity: 1,
         heightVh: 3,
         bottomVh: 53,
-        count: 9,
+        count: 6,
         filter: 'grayscale(2%) brightness(0.1) saturate(0.2)',
     },
     {
@@ -45,7 +50,7 @@ export const defaultCactusLayers: CactusLayer[] = [
         opacity: 1,
         heightVh: 6,
         bottomVh: 47,
-        count: 3,
+        count: 2,
         filter: 'grayscale(50%) brightness(0.2) saturate(0.75)',
     },
     {
@@ -53,7 +58,7 @@ export const defaultCactusLayers: CactusLayer[] = [
         opacity: 1,
         heightVh: 12,
         bottomVh: 43,
-        count: 3,
+        count: 1,
         filter: 'grayscale(40%) brightness(0.2) saturate(0.80)',
     },
     {
@@ -66,12 +71,12 @@ export const defaultCactusLayers: CactusLayer[] = [
     },
 ];
 
-// Helpers
+// ===== Helpers =====
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 const toPctStr = (n: number, d = 4) => `${n.toFixed(d)}%`;
 
 function seededRandomFactory(initialSeed: number) {
-    let seed = initialSeed;
+    let seed = initialSeed || 1;
     return () => {
         const x = Math.sin(seed++) * 10000;
         return x - Math.floor(x);
@@ -87,90 +92,84 @@ function seededShuffle<T>(arr: T[], rnd: () => number): T[] {
     return a;
 }
 
-
-// Layout builder (with divider)
+// ===== Layout builder (with center divider) =====
 function buildPlan(
-  layers: CactusLayer[],
-  centerBlockPct = 60,
-  edgeGutterPct = 3
+    layers: CactusLayer[],
+    centerBlockPct = 60,
+    edgeGutterPct = 3
 ) {
-  // Seeds created per render (quick & dirty).
-  // If you want hydration-safe SSR, swap these for a seedRef set in useEffect.
-  const posSeed = Math.floor(Math.random() * 100000) || 1;
-  const imgSeedEff = Math.floor(Math.random() * 100000) || 2;
+    const posSeed = Math.floor(Math.random() * 100000) || 1;
+    const imgSeedEff = Math.floor(Math.random() * 100000) || 2;
 
-  const posRnd = seededRandomFactory(posSeed);
+    const posRnd = seededRandomFactory(posSeed);
 
-  const halfBlock = centerBlockPct / 2;
-  const blockL = 50 - halfBlock;
-  const blockR = 50 + halfBlock;
-  const leftEdge = edgeGutterPct;
-  const rightEdge = 100 - edgeGutterPct;
+    const halfBlock = centerBlockPct / 2;
+    const blockL = 50 - halfBlock;
+    const blockR = 50 + halfBlock;
+    const leftEdge = edgeGutterPct;
+    const rightEdge = 100 - edgeGutterPct;
 
-  return layers.map((layer, bandIdx) => {
-    const leftCount = Math.floor(layer.count / 2);
-    const rightCount = layer.count - leftCount;
+    return layers.map((layer, bandIdx) => {
+        const leftCount = Math.floor(layer.count / 2);
+        const rightCount = layer.count - leftCount;
 
-    const positions: number[] = [];
+        const positions: number[] = [];
 
-    // LEFT
-    if (leftCount > 0) {
-      const span = blockL - leftEdge;
-      const step = span / leftCount;
-      // Small per-band phase to avoid symmetry
-      const leftPhase = (Math.sin((posSeed + bandIdx * 13.37) * 1.1) * 0.5 + 0.5) * 0.9 - 0.45;
-      for (let i = 0; i < leftCount; i++) {
-        const raw = leftEdge + step * (i + 0.5 + leftPhase);
-        const minC = leftEdge + step * (i + 0.25);
-        const maxC = leftEdge + step * (i + 0.75);
-        positions.push(clamp(raw, minC, maxC));
-      }
-    }
+        // LEFT
+        if (leftCount > 0) {
+            const span = blockL - leftEdge;
+            const step = span / leftCount;
+            const leftPhase = (Math.sin((posSeed + bandIdx * 13.37) * 1.1) * 0.5 + 0.5) * 0.9 - 0.45;
+            for (let i = 0; i < leftCount; i++) {
+                const raw = leftEdge + step * (i + 0.5 + leftPhase);
+                const minC = leftEdge + step * (i + 0.25);
+                const maxC = leftEdge + step * (i + 0.75);
+                positions.push(clamp(raw, minC, maxC));
+            }
+        }
 
-    // RIGHT
-    if (rightCount > 0) {
-      const span = rightEdge - blockR;
-      const step = span / rightCount;
-      const rightPhase = (Math.sin((posSeed + bandIdx * 7.77) * 1.3) * 0.5 + 0.5) * 0.9 - 0.45;
-      for (let i = 0; i < rightCount; i++) {
-        const raw = blockR + step * (i + 0.5 + rightPhase);
-        const minC = blockR + step * (i + 0.25);
-        const maxC = blockR + step * (i + 0.75);
-        positions.push(clamp(raw, minC, maxC));
-      }
-    }
+        // RIGHT
+        if (rightCount > 0) {
+            const span = rightEdge - blockR;
+            const step = span / rightCount;
+            const rightPhase = (Math.sin((posSeed + bandIdx * 7.77) * 1.3) * 0.5 + 0.5) * 0.9 - 0.45;
+            for (let i = 0; i < rightCount; i++) {
+                const raw = blockR + step * (i + 0.5 + rightPhase);
+                const minC = blockR + step * (i + 0.25);
+                const maxC = blockR + step * (i + 0.75);
+                positions.push(clamp(raw, minC, maxC));
+            }
+        }
 
-    // Randomize image order per-band
-    const imgPickRnd = seededRandomFactory(imgSeedEff + bandIdx * 1000);
-    const imgOrder = seededShuffle(layer.imgSet, imgPickRnd);
+        // Per-band shuffled images
+        const imgPickRnd = seededRandomFactory(imgSeedEff + bandIdx * 1000);
+        const imgOrder = seededShuffle(layer.imgSet, imgPickRnd);
 
-    // Horizontal jitter amplitude based on slot width
-    const totalSpan = Math.max(0, (blockL - leftEdge)) + Math.max(0, (rightEdge - blockR));
-    const slotWidth = positions.length > 0 ? totalSpan / positions.length : 0;
-    const jitterAmp = slotWidth * 0.28;
+        // Horizontal jitter based on slot width
+        const totalSpan = Math.max(0, blockL - leftEdge) + Math.max(0, rightEdge - blockR);
+        const slotWidth = positions.length > 0 ? totalSpan / positions.length : 0;
+        const jitterAmp = slotWidth * 0.28;
 
-    const items = positions.map((pos, i) => {
-      const img = imgOrder[i % imgOrder.length];
+        const items = positions.map((pos, i) => {
+            const img = imgOrder[i % imgOrder.length];
 
-      // Horizontal jitter
-      const jitterX = (posRnd() - 0.5) * jitterAmp;
-      const leftPct = clamp(pos + jitterX, leftEdge, rightEdge);
+            // X jitter + light Y/scale variety
+            const jitterX = (posRnd() - 0.5) * jitterAmp;
+            const leftPct = clamp(pos + jitterX, leftEdge, rightEdge);
 
-      // Subtle per-item Y & scale variation
-      const translateY = (posRnd() * 1.6) - 0.8; // ±0.8%
+            const translateY = (posRnd() * 1.6) - 0.8; // ±0.8%
+            const scale = 0.94 + posRnd() * 0.14;      // 0.94–1.08
 
-      const scale = 0.94 + posRnd() * 0.14;      // 0.94–1.08
+            return {
+                img,
+                leftPctStr: toPctStr(leftPct, 4),
+                translateYStr: `${translateY.toFixed(2)}%`,
+                scaleStr: scale.toFixed(2),
+            };
+        });
 
-      return {
-        img,
-        leftPctStr: toPctStr(leftPct, 4),
-        translateYStr: `${translateY.toFixed(2)}%`,
-        scaleStr: scale.toFixed(2),
-      };
+        return {layer, items};
     });
-
-    return { layer, items };
-  });
 }
 
 
@@ -180,23 +179,29 @@ function Cacti(
         pointerEvents = 'none',
         layers = defaultCactusLayers,
         edgeGutterPct = 2,
+        centerBlockPct: centerBlockPctOverride, // optional override
     }: CactiProps) {
     const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
 
-    // Named effect for mount flag
-    function markMountedEffect() {
-        setMounted(true);
-    }
+    // pull live stage + viewport values
+    const stageRect = useArtifactPlacementStore(s => s.stageRectPx);
+    const vw = useResizeStore(s => s.width);
 
-    useEffect(markMountedEffect, []);
+    // derive center gutter from stage width vs viewport (or accept external override)
+    const centerBlockPct = useMemo(() => {
+        if (typeof centerBlockPctOverride === 'number') return centerBlockPctOverride;
 
-    const vp = useStageGroundSizeClass();
+        const stageW = stageRect?.width ?? 0;
+        const viewportW = vw ?? 0;
+        if (stageW <= 0 || viewportW <= 0) return 66; // safe first paint
 
-    // responsive middle gutter
-    const centerBlockPct =
-        vp === 'mobile' ? 20 : // wide center gap on mobile
-            vp === 'desktop' ? 67 : // balanced gap on desktop
-                35; // tighter on ultrawide
+        const raw = (stageW / viewportW) * 100;
+        const buffer = STAGE_BUFFER;
+        const val = raw + buffer;
+
+        return Math.max(20, Math.min(90, val)); // clamp for sanity
+    }, [centerBlockPctOverride, stageRect?.width, vw]);
 
     const plan = useMemo(
         () => buildPlan(layers, centerBlockPct, edgeGutterPct),
@@ -242,7 +247,6 @@ function Cacti(
                                 objectFit: 'contain',
                             }}
                         />
-
                     ))}
                 </div>
             ))}

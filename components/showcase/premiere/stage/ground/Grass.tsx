@@ -1,8 +1,15 @@
 'use client';
 
 import React, {memo, useMemo, useEffect, useState} from 'react';
-import {computeGroundDepth} from '@/components/utils/computeGroundDepth';
+import {computeGroundDepth} from '@/components/showcase/premiere/stage/ground/computeGroundDepth';
 import {useStageGroundSizeClass} from '@/hooks/showcase/premiere/stage/useStageGroundSizeClass';
+
+import {useArtifactPlacementStore} from '@/states/showcase/premiere/stage_setting/useArtifactPlacementStore';
+import {useResizeStore} from "@/states/useResizeProvider";
+
+
+const STAGE_BUFFER = 0.7
+
 
 export interface GrassProps {
     visible?: boolean;
@@ -33,33 +40,49 @@ export const defaultGrassLayers: GrassLayer[] = [
         opacity: 0.2,
         heightVh: .5,
         bottomVh: 55,
-        count: 5,
+        count: 1,
         filter: 'grayscale(45%) brightness(0.45) contrast(1.05)'
     },
     {
         imgSet: grassImages,
-        opacity: 0.3,
-        heightVh: 2,
-        bottomVh: 45,
-        count: 15,
+        opacity: 0.2,
+        heightVh: 1,
+        bottomVh: 51,
+        count: 9,
         filter: 'grayscale(45%) brightness(0.55) contrast(1.05)'
     },
     {
         imgSet: grassImages,
-        opacity: 0.4,
-        heightVh: 4,
-        bottomVh: 35,
-        count: 6,
+        opacity: 0.3,
+        heightVh: 3,
+        bottomVh: 37,
+        count: 5,
         filter: 'grayscale(40%) brightness(0.65) contrast(1.08)'
     },
     {
         imgSet: grassImages,
-        opacity: 0.5,
-        heightVh: 7,
-        bottomVh: 25,
-        count: 5,
-        filter: 'grayscale(35%) brightness(0.75) contrast(1.1)'
+        opacity: .5,
+        heightVh: 5,
+        bottomVh: 23,
+        count: 3,
+        filter: 'grayscale(40%) brightness(0.65) contrast(1.08)'
     },
+    // {
+    //     imgSet: grassImages,
+    //     opacity: 0.4,
+    //     heightVh: 5,
+    //     bottomVh: 25,
+    //     count: 3,
+    //     filter: 'grayscale(35%) brightness(0.75) contrast(1.1)'
+    // },
+    //     {
+    //     imgSet: grassImages,
+    //     opacity: 0.5,
+    //     heightVh: 7,
+    //     bottomVh: 9,
+    //     count: 1,
+    //     filter: 'grayscale(35%) brightness(0.75) contrast(1.1)'
+    // },
 ];
 
 // Helpers
@@ -174,6 +197,7 @@ function Grass(
     }: GrassProps) {
     const [mounted, setMounted] = useState(false);
 
+
     // Named effect for mount flag
     function markMountedEffect() {
         setMounted(true);
@@ -183,11 +207,30 @@ function Grass(
 
     const vp = useStageGroundSizeClass();
 
-    // Responsive gutter
-    const centerBlockPct =
-        vp === 'mobile' ? 80 :       // wide gap on mobile
-            vp === 'desktop' ? 66 :      // balanced gap on desktop
-                33;                          // tighter on ultrawide
+
+
+    // pull from zustand for stage sizes
+    const stageRect = useArtifactPlacementStore(s => s.stageRectPx);
+    const visualZoomOn = useArtifactPlacementStore(s => s.visualZoomOn);
+
+// viewport width from your resize store
+    const vw = useResizeStore(s => s.width);
+
+// Derived center gutter as a % of viewport, plus a small buffer.
+// We clamp to keep it sane across ultra-wide or tiny phones.
+    const centerBlockPct = useMemo(() => {
+        const stageW = stageRect?.width ?? 0;
+        const viewportW = vw ?? 0;
+        if (stageW <= 0 || viewportW <= 0) return 50;  // safe fallback during first paint
+
+        const raw = (stageW / viewportW) * 100;
+        const buffer = STAGE_BUFFER
+        const val = raw + buffer;
+
+        // keep within [20, 90] so the bands never collapse or dominate
+        return Math.max(20, Math.min(90, val));
+    }, [stageRect?.width, vw, visualZoomOn]);
+
 
     const plan = useMemo(
         () => buildPlan(layers, centerBlockPct, edgeGutterPct),

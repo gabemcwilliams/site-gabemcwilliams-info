@@ -10,7 +10,6 @@ import React, {
   type CSSProperties,
 } from 'react';
 import { useRouter } from 'next/navigation';
-
 import { useArtifactPlacementStore } from '@/states/showcase/premiere/stage_setting/useArtifactPlacementStore';
 
 /* =========================
@@ -29,30 +28,23 @@ interface CurtainParams {
 
 type Layout = {
   stage: {
-    innerWidth: string; // e.g., 'clamp(0px, 70vw, 1100px)'
-    padTop: string;     // px string (computed from vh)
-    padBottom: string;  // clamp(px, vh, px)
+    innerWidth: string; // clamp(min, pref, max)
+    padTop: string;     // px
+    padBottom: string;  // vh
     zoomScale: number;
   };
   emblem: { top: string; width: string };
   curtains: { left: CurtainParams; right: CurtainParams };
 };
 
-
-// Props for the Stage component
+// Props
 export interface StageProps {
-  /** Force zoomed visuals (in addition to internal zoom phases) */
   zoom?: boolean;
-  /** Hide emblem/clicks during closeup */
   closeup?: boolean;
-  /** Called when either curtain is activated */
   onCurtainClick?: () => void;
-  /** Called when the emblem is clicked */
   onEmblemClick?: () => void;
-  /** z-index for the root wrapper */
   zIndex?: number;
 }
-
 
 /* =========================
    Assets
@@ -68,29 +60,40 @@ const ASSETS = {
 const ASPECT_RATIO = '2000 / 1000';
 
 /* =========================
-   Layout (fluid, no breakpoints)
+   Layout (ratio + caps)
    ========================= */
-const STAGE_VW_RATIO = 0.50;
-const STAGE_MIN_PX   = 0;
-const STAGE_MAX_PX   = 1100;
 
-// Top padding (non-linear growth on small screens)
+// Global zoom-out (1 = current size; <1 = smaller; >1 = larger)
+const STAGE_GLOBAL_SCALE = 0.90;
+
+// Ratio knobs
+const STAGE_RATIO_BASE = 0.36; // overall baseline (in vw units)
+const STAGE_RATIO_MULT = 0.10; // responsiveness to aspect
+
+// Hard caps for stage width (px)
+const STAGE_MIN_PX = 10;   // feel free to lower/raise
+const STAGE_MAX_PX = 900;  // canonical upper bound you had before
+
+// Top padding curve (unchanged behavior)
 const TOP_PAD_VH_BASE  = 0.350; // 35% of viewport height baseline
-const TOP_PAD_MIN_PX   = 24;
-const TOP_PAD_MAX_PX   = 600;
-const TOP_PAD_STRENGTH = 0.25;  // 0..1.5 typical
-const TOP_PAD_EXPONENT = 1.5;   // >1 curves up as screens get small
+const TOP_PAD_STRENGTH = 0.25;  // curvature strength
+const TOP_PAD_EXPONENT = 1.5;   // curvature exponent
 
-// Bottom padding (simple clamp)
-const PAD_BOTTOM_VH     = 0.22;
-const PAD_BOTTOM_MIN_PX = 600;
-const PAD_BOTTOM_MAX_PX = 800;
+// Bottom padding as pure vh
+const PAD_BOTTOM_VH = 0.4;
 
 // Emblem ratios relative to the stage box
 const EMBLEM_TOP_RATIO   = 0.075;
 const EMBLEM_WIDTH_RATIO = 0.05;
 
 const pct = (n: number) => `${n * 100}%`;
+
+/** Aspect-aware ratio that reacts to both width & height */
+function computeStageRatio(vw: number, vh: number): number {
+  const aspect = vw / Math.max(1, vh);          // protect divide-by-zero
+  const logFactor = Math.log10(aspect + 1);     // ~0 → ~1.3 typical
+  return STAGE_RATIO_BASE + STAGE_RATIO_MULT * logFactor;
+}
 
 /* =========================
    Hooks
@@ -111,7 +114,6 @@ type ZoomPhase = 'unzoomed' | 'zooming' | 'zoomed' | 'redirecting';
 function useCurtainNavigation(onCurtainClick?: () => void) {
   const router = useRouter();
   const [phase, setPhase] = useState<ZoomPhase>('unzoomed');
-
   const isZoomed = phase === 'zooming' || phase === 'zoomed' || phase === 'redirecting';
 
   const handleCurtainActivate = useCallback(() => {
@@ -143,22 +145,30 @@ function useCurtainNavigation(onCurtainClick?: () => void) {
 }
 
 /* =========================
-   Layout computer
+   Layout computer (ratio + clamp)
    ========================= */
 function computeLayout(vwPx: number, vhPx: number): Layout {
-  // Stage width in pixels (evaluated to compute the “shrink” factor)
-  const stageWidthPx = Math.min(Math.max(STAGE_MIN_PX, STAGE_VW_RATIO * vwPx), STAGE_MAX_PX);
-  const shrink = 1 - Math.min(stageWidthPx / STAGE_MAX_PX, 1); // 0..1
+  // 1) Ratio reacts to both vw & vh
+  const ratio = computeStageRatio(vwPx, vhPx);         // e.g., ~0.46..0.56
 
-  // Non-linear top padding
+  // 2) Preferred width in vw, but expose caps via CSS clamp()
+  const preferredVW = `${(ratio * 100).toFixed(3)}vw`;
+  const innerWidth = `clamp(${STAGE_MIN_PX}px, ${preferredVW}, ${STAGE_MAX_PX}px)`;
+
+  // 3) For the top padding curve we need the *effective* width in px if clamps apply
+  const stageWidthPxEffective = Math.min(Math.max(STAGE_MIN_PX, ratio * vwPx), STAGE_MAX_PX);
+
+  // Shape the top padding as screens get smaller, no hard caps on the padding itself
+  const canonicalMax = STAGE_MAX_PX; // just for shaping the curve
+  const filled = stageWidthPxEffective / canonicalMax; // <=1 typical
+  const shrink = Math.max(0, 1 - filled);              // 1 at tiny widths → 0 as we near max
   const topPadPxRaw =
     (TOP_PAD_VH_BASE * vhPx) * (1 + TOP_PAD_STRENGTH * Math.pow(shrink, TOP_PAD_EXPONENT));
-  const padTop = `${Math.min(Math.max(topPadPxRaw, TOP_PAD_MIN_PX), TOP_PAD_MAX_PX)}px`;
 
   const stage = {
-    innerWidth: `clamp(${STAGE_MIN_PX}px, ${STAGE_VW_RATIO * 100}vw, ${STAGE_MAX_PX}px)`,
-    padTop,
-    padBottom: `clamp(${PAD_BOTTOM_MIN_PX}px, ${PAD_BOTTOM_VH * 100}vh, ${PAD_BOTTOM_MAX_PX}px)`,
+    innerWidth,                                   // <-- capped via clamp()
+    padTop: `${Math.round(topPadPxRaw)}px`,
+    padBottom: `${(PAD_BOTTOM_VH * 100).toFixed(3)}vh`,
     zoomScale: 3.4,
   };
 
@@ -171,8 +181,8 @@ function computeLayout(vwPx: number, vhPx: number): Layout {
     width: '50%',
     height: '60.5%',
     translateXMag: '16%',
-    scaleX: 2.8,
-    scaleY: 2.8,
+    scaleX: 4.8,
+    scaleY: 3.6,
   };
 
   const curtains = {
@@ -214,7 +224,7 @@ function Stage({
   const { vw, vh } = useViewportSize(1200, 800);
   const layout = useMemo(() => computeLayout(vw, vh), [vw, vh]);
 
-  const [hover, setHover] = useState(false);
+  // const [hover, setHover] = useState(false);
   const { phase, isZoomed, handleCurtainActivate, handleCurtainKey } =
     useCurtainNavigation(onCurtainClick);
 
@@ -353,7 +363,7 @@ function Stage({
   const innerStyle = useMemo<CSSProperties>(
     () => ({
       position: 'relative',
-      width: layout.stage.innerWidth,
+      width: layout.stage.innerWidth, // clamp(min px, pref vw, max px)
       aspectRatio: ASPECT_RATIO,
       display: 'flex',
       alignItems: 'center',
@@ -364,6 +374,7 @@ function Stage({
     [layout.stage.innerWidth]
   );
 
+  const [hover, setHover] = useState(false);
   const handleEmblem = useCallback(() => {
     if (onEmblemClick) onEmblemClick();
     else window.location.href = '/';
@@ -382,7 +393,7 @@ function Stage({
   return (
     <div style={rootStyle}>
       <div ref={stageRef} style={innerStyle}>
-        {/* Emblem (relative to stage box) */}
+        {/* Emblem */}
         <img
           src={hover ? ASSETS.emblemHighlighted : ASSETS.emblem}
           alt="Stage Emblem"
@@ -394,9 +405,9 @@ function Stage({
           onClick={handleEmblem}
           style={{
             position: 'absolute',
-            top: layout.emblem.top,     // % of stage height
+            top: layout.emblem.top,
             left: '50%',
-            width: layout.emblem.width, // % of stage width
+            width: layout.emblem.width,
             transform: 'translateX(-50%)',
             transformOrigin: 'center top',
             zIndex: 410,

@@ -1,4 +1,4 @@
-// depthZ.ts
+// computeGroundDepth
 export function computeGroundDepth(
   bottomVh: number,
   jitter = 0,
