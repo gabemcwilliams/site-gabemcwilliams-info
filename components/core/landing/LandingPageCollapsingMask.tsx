@@ -99,11 +99,6 @@ export default function LandingPageCollapsingMask(
         const defs = svg.append('defs');
         const mask = defs.append('mask').attr('id', 'shrink-mask');
 
-        // mask
-        //     .append('rect')
-        //     .attr('width', window.innerWidth)
-        //     .attr('height', window.innerHeight)
-        //     .attr('fill', 'white');
 
         maskElRef.current = mask.node() as SVGMaskElement;
 

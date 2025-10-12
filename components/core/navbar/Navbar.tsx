@@ -34,6 +34,8 @@ export default function NavBar() {
 
     const [hoverEnabled, setHoverEnabled] = useState(false);
 
+    const navRef = useRef<HTMLElement | null>(null);
+
     const ICONS = {
         default: '/assets/core/navbar/logo_growing.svg',
         wilted: '/assets/core/navbar/logo_wilted.svg',
@@ -65,54 +67,60 @@ export default function NavBar() {
     const setGlobalAnchor = useLogoAnchorStore((s) => s.setAnchor);
 
     useEffect(() => {
-        let rafId: number | null = null;
+        let raf1: number | null = null;
+        let raf2: number | null = null;
+
         const snap = (v: number) => {
             const dpr = window.devicePixelRatio || 1;
             return Math.round(v * dpr) / dpr;
         };
 
-        const measure = () => {
-            const wrapEl = logoWrapRef.current;
-            const iconEl = iconBoxRef.current ?? wrapEl;
-            if (!iconEl) return;
-
-            if (rafId != null) cancelAnimationFrame(rafId);
-            rafId = requestAnimationFrame(() => {
-                const r = iconEl.getBoundingClientRect();
-                const left = snap(r.left);
-                const top = snap(r.top);
-                const width = snap(r.width);
-                const height = snap(r.height);
-
-                // console.debug('[NavBar anchor]', {left, top, width, height, ts: Date.now()});
-                setAnchor({left, top}); // local
-                setGlobalAnchor({
-                    left,
-                    top,
-                    width,
-                    height,
-                    centerX: left + width / 2,
-                    centerY: top + height / 2,
-                    ts: performance.now(),
-                });
+        const read = () => {
+            const el = iconBoxRef.current ?? logoWrapRef.current;
+            if (!el) return;
+            const r = el.getBoundingClientRect();
+            const left = snap(r.left);
+            const top = snap(r.top);
+            const width = snap(r.width);
+            const height = snap(r.height);
+            setAnchor({left, top});
+            setGlobalAnchor({
+                left, top, width, height,
+                centerX: left + width / 2,
+                centerY: top + height / 2,
+                ts: performance.now(),
             });
         };
 
+        const measure = () => {
+            // wait 2 frames for CSS vars + padding + image layout to settle
+            if (raf1) cancelAnimationFrame(raf1);
+            if (raf2) cancelAnimationFrame(raf2);
+            raf1 = requestAnimationFrame(() => {
+                raf2 = requestAnimationFrame(read);
+            });
+        };
+
+        // seed + listeners
         measure();
-        window.addEventListener('resize', measure);
+        window.addEventListener('resize', measure, {passive: true});
         window.addEventListener('scroll', measure, {passive: true});
+
         const ro = new ResizeObserver(measure);
         if (logoWrapRef.current) ro.observe(logoWrapRef.current);
         if (iconBoxRef.current) ro.observe(iconBoxRef.current);
+        if (navRef.current) ro.observe(navRef.current);
 
         return () => {
-            if (rafId != null) cancelAnimationFrame(rafId);
+            if (raf1) cancelAnimationFrame(raf1);
+            if (raf2) cancelAnimationFrame(raf2);
             window.removeEventListener('resize', measure);
             window.removeEventListener('scroll', measure);
             ro.disconnect();
             setGlobalAnchor(null);
         };
-    }, [setGlobalAnchor]);
+    }, [setGlobalAnchor, compact]); // include compact so a layout mode change re-measures
+
 
     const zones =
         isHome && hoverEnabled && anchor
@@ -183,17 +191,22 @@ export default function NavBar() {
 
     return (
         <nav
-            className={`h-[13vh] bg-[var(--BG_NAVBAR)] text-[var(--BRAND_LEAF)] w-full px-0 flex
-      ${compact ? 'justify-start items-center' : 'justify-between items-center'}
-      sticky top-0 z-50`}
+            ref={navRef}
+            className={`bg-[var(--BG_NAVBAR)] text-[var(--BRAND_LEAF)] w-full px-0 flex
+     ${compact ? 'justify-start items-center' : 'justify-between items-center'}
+     sticky top-0 z-50`}
+
             style={{
                 // drives the target logo height everywhere
-                ['--logo-h' as any]: 'clamp(56px, 12dvh, 128px)',
+                ['--logo-h' as any]: 'clamp(56px, 13dvh, 128px)',
+                paddingTop: 'calc(var(--logo-h) * 0.05)',
+                paddingBottom: 'calc(var(--logo-h) * 0.25)',
+                paddingInline: 'calc(var(--logo-h) * 0.3)',
             }}
         >
             {/* COMPACT: show only the combined mark; position at top-left */}
             {compact ? (
-                <div className="flex items-start pl-4">
+                <div className="flex items-center pl-4">
                     <div
                         ref={logoWrapRef}
                         className="relative"
@@ -218,7 +231,7 @@ export default function NavBar() {
             ) : (
                 <>
                     {/* Left: icon + text (real layout; no transforms) */}
-                    <div className="flex items-end gap-1 min-h-[10px] pl-16">
+                    <div className="flex items-center gap-1 pl-16">
                         <div className="relative" style={{height: 'var(--logo-h)'}}>
                             <Link href="/" className="relative block h-full">
                                 <div className="flex items-end h-full min-w-0 gap-1">
