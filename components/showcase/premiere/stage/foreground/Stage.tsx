@@ -73,7 +73,7 @@ const STAGE_MIN_PX = 10;   // feel free to lower/raise
 const STAGE_MAX_PX = 900;  // canonical upper bound you had before
 
 // Top padding curve (unchanged behavior)
-const TOP_PAD_VH_BASE  = 0.350; // 35% of viewport height baseline
+const TOP_PAD_VH_BASE  = 0.450; // 35% of viewport height baseline
 const TOP_PAD_STRENGTH = 0.25;  // curvature strength
 const TOP_PAD_EXPONENT = 1.5;   // curvature exponent
 
