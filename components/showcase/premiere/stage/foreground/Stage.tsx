@@ -180,7 +180,7 @@ function computeLayout(vwPx: number, vhPx: number): Layout {
     height: '60.5%',
     translateXMag: '16%',
     scaleX: 4.8,
-    scaleY: 3.6,
+    scaleY: 4.6,
   };
 
   const curtains = {
